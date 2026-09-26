@@ -78,8 +78,10 @@
 	- [mail] - опции подключения к smtp server
 
 Для запуска приложения в Дебаг режиме:
-> cd api_drf
-> python3 manage.py runserver
+```
+cd api_drf
+python3 manage.py runserver
+```
 
 ### Тесты
 в проекте core (core/tests) небольшое покрытие юнит тестами
