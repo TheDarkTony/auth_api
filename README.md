@@ -52,11 +52,11 @@
 
 Зависимости решения зафиксированы в файле requirements.txt (а также в pyproject.toml файле пакетов)
 Для настройки "внутренних" зависимостей нужно выполнить:
->>> pip install -e ./core_contracts
->>> pip install -e ./core
->>> pip install -e ./repo_sqlalchemy
->>> pip install -e ./queue_publishers
->>> pip install -e ./queue_workers
+> pip install -e ./core_contracts
+> pip install -e ./core
+> pip install -e ./repo_sqlalchemy
+> pip install -e ./queue_publishers
+> pip install -e ./queue_workers
 
 Команда для применения миграций базы данных (в проекте repo_migrations) выполняется после установления зависимостей:
 >>> alembic upgrade head
@@ -74,8 +74,8 @@
 	- [mail] - опции подключения к smtp server
 
 Для запуска приложения в Дебаг режиме:
->>> cd api_drf
->>> python3 manage.py runserver
+> cd api_drf
+> python3 manage.py runserver
 
 ### Тесты
 в проекте core (core/tests) небольшое покрытие юнит тестами
