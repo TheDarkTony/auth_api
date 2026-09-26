@@ -52,14 +52,18 @@
 
 Зависимости решения зафиксированы в файле requirements.txt (а также в pyproject.toml файле пакетов)
 Для настройки "внутренних" зависимостей нужно выполнить:
-> pip install -e ./core_contracts
-> pip install -e ./core
-> pip install -e ./repo_sqlalchemy
-> pip install -e ./queue_publishers
-> pip install -e ./queue_workers
+```
+>>> pip install -e ./core_contracts
+>>> pip install -e ./core
+>>> pip install -e ./repo_sqlalchemy
+>>> pip install -e ./queue_publishers
+>>> pip install -e ./queue_workers
+```
 
 Команда для применения миграций базы данных (в проекте repo_migrations) выполняется после установления зависимостей:
+```
 >>> alembic upgrade head
+```
 
 Настройки конфигурационных файлов:
 - в проекте api_drf (api_drf/setup/settings.py):
