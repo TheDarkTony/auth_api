@@ -23,22 +23,32 @@
 
 правила:
 **allow_enumerate** правило определяет доступ на чтение списков ресурса (например, при получении списка пользователей, если false для nonown mode, то записи кроме собственной должны быть отфильтрованы в выборке)
-**allow_read** правило определяет доступ на чтение записи ресурса 
+
+**allow_read** правило определяет доступ на чтение записи ресурса
+
 **allow_create** правило определяет доступ на создание записи ресурса
+
 **allow_edit** правило определяет доступ на редактрирование записи ресурса
+
 **allow_delete** правило определяет доступ на удаление записи ресурса для чтения
 
 **role_id** - хранит id роли, для которой применяются правила (если значение null, правила применяются ко всем ролям т.о. null предотвращает дублирования одинаковых правил)
+
 **resource_id** - хранит id ресурса, для которого применяются правила (если значение null, правила применяются ко всем ресурсам т.о. null предотвращает дублирования одинаковых правил)
 
 В таблице могут быть несколько записей правил (для роли и ресурсов). Каждая записль правила имеет вес определяющийся **weigh_role_permission** функцией
 Наименьший вес имеет больший приоритет для применения правила
 
 1 - *specific permission* (role_id is not null and resource_id is not null and mode is not null)
+
 2 - *specific permission for all mode* (role_id is not null and resource_id is not null and mode is null)
+
 3 - *default role permission* (role_id is null and resource_id is not null and mode is not null)
+
 4 - *default role permission for all mode* (role_id is null and resource_id is not null and mode is null)
+
 5 - *default resource permission* (role_id is not null and resource_id is null and mode is not null)
+
 6 - *default resource permission for all mode* (role_id is not null and resource_id is null and mode is null)
 
 ### Некоторые детали реализации:
