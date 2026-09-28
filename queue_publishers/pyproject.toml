@@ -1,0 +1,11 @@
+[build-system]
+requires = ["setuptools>=82.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "queue_publishers"
+version = "0.1.0"
+dependencies = [
+    'pika == 1.4.1',
+    'core_contracts == 0.1.0'
+]

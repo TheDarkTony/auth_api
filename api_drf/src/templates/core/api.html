@@ -1,0 +1,52 @@
+{% extends "rest_framework/api.html" %}
+{% load i18n %}
+{% load static %}
+{% load browsableapi %}
+
+
+{% block head %}
+    {{ block.super }}
+    <link rel="icon" type="image/x-icon" href="{% static 'core/img/pizza-icon-white-bg.avif' %}">
+{% endblock %}
+
+
+{% block navbar %}
+<div class="navbar navbar-static-top {% block bootstrap_navbar_variant %}navbar-inverse{% endblock %}"
+        role="navigation" aria-label="{% trans "navbar" %}">
+    <div class="container">
+    <span>
+        {% block branding %}
+        <a class='navbar-brand' rel="nofollow" href='https://www.django-rest-framework.org/'>
+            Pizza App!
+        </a>
+        {% endblock %}
+    </span>
+    <ul class="nav navbar-nav pull-right">
+        <li>{% auth_link 'auth-signin' 'Sign IN' %}</li>
+        <li>{% auth_link 'auth-signin-2fa' 'Sign IN 2FA' %}</li>
+        <li>{% auth_link 'auth-signup' 'Sign UP' %}</li>
+        <li>{% auth_link 'auth-signup-2fa' 'Sign UP 2FA' %}</li>
+        <li>{% auth_link 'auth-signout' 'Sign OUT' %}</li>
+    </ul>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block script %}
+    <script type="application/json" id="drf_csrf">
+    {
+        "csrfHeaderName": "{{ csrf_header_name|default:'X-CSRFToken' }}",
+        "csrfToken": "{% if request %}{{ csrf_token }}{% endif %}"
+    }
+    </script>
+    <script src="{% static "core/js/browsable-constants.js" %}"></script>
+    <script src="{% static "rest_framework/js/jquery-3.7.1.min.js" %}"></script>
+    <script src="{% static "core/js/ajax-form.js" %}"></script>
+    <script src="{% static "rest_framework/js/csrf.js" %}"></script>
+    <script src="{% static "rest_framework/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "rest_framework/js/prettify-min.js" %}"></script>
+    <script src="{% static "rest_framework/js/default.js" %}"></script>
+    <script src="{% static "rest_framework/js/load-ajax-form.js" %}"></script>
+    <script src="{% static "core/js/browsable-signin.js" %}"></script>
+{% endblock %}

@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=82.0"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "core_contracts"
+version = "0.1.0"
+description = 'package contains defenitions of model and interfaces. inheritance from which core of aplication can be extended by using various libraries for data access.'
+dependencies = []
+
+
+
+

@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=82.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "queue_workers"
+version = "0.1.0"
+dependencies = [
+    'pika == 1.4.1',
+    'repo_sqlalchemy == 0.1.0',
+    'SQLAlchemy == 2.0.49',
+    'psycopg2 == 2.9.12'
+]
