@@ -1,15 +1,13 @@
 import logging
-from typing import Callable
 
 from rest_framework.views import exception_handler
 from rest_framework.settings import settings
 
 import valkey
 
-from core_contracts.handler import MessageType, Response
-from core_contracts.issues import ConfigurationIssue
+from core_contracts.handler import MessageType, Response, TRACE_ID
 from core_contracts.identity.repositories import IUserTempBlackListRepository
-from queue_publishers import publisher
+from core_contracts.queue.bus import IMessageInBus, Message
 
 from src.api_core.response import Offer
 from src.api_core.serializers import ResultSerializer
@@ -41,29 +39,51 @@ class DjangoLogFilter(logging.Filter):
         return not record.name.startswith('django')
 
 
-class QueueLogAdapter:
+class BusQueueLogAdapter(object):
 
-    def __init__(self, queue_manager_provired, exchange:str) -> None:
-        self._manager_provider:Callable[[], publisher.QueueManager] = queue_manager_provired
-        self._exchange: str = exchange
-        self._queue_manager: publisher.QueueManager|None = None
+    def __init__(self, bus:IMessageInBus):
+        self._bus: IMessageInBus = bus
+        self._exchange: str = ''
+
+    def setup_exchange(self, exchange: str):
+        self._exchange = exchange
 
     def enqueue(self, json_message: str):
-        publisher = self._manager.get_publisher()
+        self._bus.enqueue(Message(
+            body=json_message,
+            content_type='application/json',
+            correlation_id=TRACE_ID.get(),
+            destination_point=self._exchange
+        ))
+
+
+#DEPRICATED
+# class QueueLogAdapter(object):
+
+#     def __init__(self, queue_manager_provired) -> None:
+#         self._manager_provider:Callable[[], publisher.QueueManager] = queue_manager_provired
+#         self._queue_manager: publisher.QueueManager|None = None
+#         self._exchange: str = ''
+
+#     def setup_exchange(self, exchange: str):
+#         self._exchange = exchange
+
+#     def enqueue(self, json_message: str):
+#         publisher = self._manager.get_publisher()
         
-        (publisher
-         .msg_props(content_type='application/json')
-         .target(self._exchange, '')
-         .publish(json_message))
+#         (publisher
+#          .msg_props(content_type='application/json')
+#          .target(self._exchange, '')
+#          .publish(json_message))
 
-    @property
-    def _manager(self) -> publisher.QueueManager:
-        if self._queue_manager is None:
-            self._queue_manager = self._manager_provider()
-        return self._queue_manager
+#     @property
+#     def _manager(self) -> publisher.QueueManager:
+#         if self._queue_manager is None:
+#             self._queue_manager = self._manager_provider()
+#         return self._queue_manager
 
 
-class AccessTokenBlackListValkey:
+class AccessTokenBlackListValkey(object):
 
     def __init__(self, valkey_instance: valkey.Valkey) -> None:
         self._valkey: valkey.Valkey = valkey_instance

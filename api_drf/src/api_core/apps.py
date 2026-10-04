@@ -7,11 +7,21 @@ import logging
 from django.apps import AppConfig
 from rest_framework.settings import settings
 
-from queue_publishers import publisher
 from core.logging import LogViaQueueHandler
 
-from src.api_core.utils import QueueLogAdapter, DjangoLogFilter
 from src.api_core.container import AppContainer
+from src.api_core.utils import DjangoLogFilter, BusQueueLogAdapter
+
+from queue_publishers.message_bus import MemoryMessageBus
+from queue_publishers.queue_manager import get_queue_manager_bg_task, ThreadStopper
+
+
+MESSAGE_BUS: MemoryMessageBus = MemoryMessageBus()
+
+def setup_bg_publisher(amqp_url):
+    stopper = ThreadStopper()
+    thread = get_queue_manager_bg_task(amqp_url, MESSAGE_BUS, stopper)
+    return thread, stopper
 
 
 class ApiCoreConfig(AppConfig):
@@ -58,6 +68,7 @@ class ApiCoreConfig(AppConfig):
             raise Exception('Missed configuration: VALKEY_URL')
 
         queue = settings.RABBITMQ
+        queue_url = queue.get('URL')
         queue_host = queue.get('HOST')
         queue_username = queue.get('USERNAME')
         queue_password = queue.get('PASSWORD')
@@ -81,6 +92,7 @@ class ApiCoreConfig(AppConfig):
                 'url': valkey_url
             },
             'rabbitmq': {
+                'url': queue_url,
                 'host': queue_host,
                 'username': queue_username,
                 'password': queue_password,
@@ -102,10 +114,13 @@ class ApiCoreConfig(AppConfig):
             }
         })
 
-        def _logging_queue_provider()-> publisher.QueueManager:
-            return container.queue_manager()
+        container.override_providers(message_bus=MESSAGE_BUS)
+        thread, stopper = setup_bg_publisher(queue_url)
+        thread.start()
+
+        log_emitter = BusQueueLogAdapter(MESSAGE_BUS)
+        log_emitter.setup_exchange(pizza_db_logging_exchange)
         
-        log_emitter = QueueLogAdapter(_logging_queue_provider, pizza_db_logging_exchange)
         queue_log_handler = LogViaQueueHandler(queue=log_emitter)
         queue_log_handler.addFilter(DjangoLogFilter(name='filter_django_logs_out'))
         logging.basicConfig(format='%(message)s', handlers=[queue_log_handler], level=logging.INFO)
@@ -120,36 +135,32 @@ class ApiCoreConfig(AppConfig):
                 print('Disposing: db engine')
                 db_conn = container.db_engine()
                 db_conn.dispose()
-            finally:
-                pass
+            except Exception as ex:
+                print(ex)
 
             try:
-                print('Disposing: rabbit mq')
-                publisher.dispose()
-            except Exception as e:
-                print(f"Error during Disposing: rabbit mq: {e}")
-            finally:
-                pass
+                stopper.stop()
+                thread.join()
+                print('QM stopped')
+            except Exception as ex:
+                print(ex)
 
             try:
                 print('Disposing: valkey server')
                 valkey = container.valkey_client()
                 valkey.close()
-            finally:
-                pass
+            except Exception as ex:
+                print(ex)
 
             container.unwire()
             disposed = True
             print('Disposed')
-            
+
 
         def graceful_shutdown(signum, frame):
             print("\n[Shutdown] Control-C detected. Cleaning up resources...")
-
             clean_up()
-
-            # Terminate the process cleanly so Django can release the port
-            sys.exit(0) 
+            sys.exit(0) # Terminate the process cleanly so Django can release the port
 
         if os.environ.get('RUN_MAIN') == 'true':
             signal.signal(signal.SIGINT, graceful_shutdown)

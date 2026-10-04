@@ -21,6 +21,7 @@ from repo_sqlalchemy.permission import repo as pr
 from repo_sqlalchemy.temp_token import repo as tr
 
 from queue_publishers import emailer_2fa
+from queue_publishers.message_bus import MemoryMessageBus
 
 from core.pizza import orders
 from src.pizza import wrappers as pizza_wrappers
@@ -97,18 +98,12 @@ class AppContainer(containers.DeclarativeContainer):
     )
 
     ####queue deps
-
-    queue_manager = providers.ThreadLocalSingleton(
-        emailer_2fa.QueueManager
-        , config.rabbitmq.host
-        , config.rabbitmq.username
-        , config.rabbitmq.password
-        , 2
+    message_bus=providers.ThreadSafeSingleton(
+        MemoryMessageBus
     )
-
     emailer_queue_client = providers.Factory(
-        emailer_2fa.Emailer2FAPublisher
-        , publisher=queue_manager
+        emailer_2fa.BusedEmail2FAPublisher
+        , bus=message_bus
         , exchange_name=config.rabbitmq.exchanges.auth_2fa_emailer
     )
 
