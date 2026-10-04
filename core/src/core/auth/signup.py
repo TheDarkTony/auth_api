@@ -105,7 +105,7 @@ class SignUpHandler(Handler):
             pwd
         )
 
-        self._emailer_queue.send_2fa_code_via_email(msg)
+        self._emailer_queue.send_2fa_code_via_email(msg, correlation_id=ctx.request_trace_id)
 
         data = DemandAccepted(token)
         response = Response(202, data=data, state_code=utils.AcceptedStateEnum.Verification2FA.value)

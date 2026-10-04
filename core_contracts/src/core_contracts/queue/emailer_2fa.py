@@ -20,6 +20,6 @@ class Email2FAVerificationMessage:
 class Emailer2FAQueuePublisher(metaclass=ABCMeta):
 
     @abstractmethod
-    def send_2fa_code_via_email(self, data: Email2FAVerificationMessage,  correlation_id:str|None=None):
+    def send_2fa_code_via_email(self, data: Email2FAVerificationMessage,  correlation_id:str):
         raise NotImplementedError
 
