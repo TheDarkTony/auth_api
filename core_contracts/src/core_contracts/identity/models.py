@@ -1,31 +1,30 @@
-from dataclasses import dataclass, field
+from typing import Annotated
 from datetime import datetime
 from enum import StrEnum
 
-from core_contracts.metainfo import FieldMetaData, FieldLength
+from pydantic import BaseModel, Field, StringConstraints, computed_field
+
+from core_contracts.metainfo import FieldLength
 from core_contracts.base import utcnow
 
 
-@dataclass
-class IdentitySubject:
-    email: str = field(metadata={FieldMetaData.max_length.value: FieldLength.l_75.value})
+class IdentitySubject(BaseModel):
+    email: Annotated[str, StringConstraints(max_length=FieldLength.l_75.value)]
     email_verified: bool
-    fname: str | None = field(default=None, metadata={FieldMetaData.max_length.value: FieldLength.l_50.value})
-    lname: str | None = field(default=None, metadata={FieldMetaData.max_length.value: FieldLength.l_50.value})
-    created_date: datetime = field(default_factory=utcnow)
-    is_activated: bool = field(default=False)
+    fname: Annotated[str | None, StringConstraints(max_length=FieldLength.l_50.value)]
+    lname: Annotated[str | None, StringConstraints(max_length=FieldLength.l_50.value)]
+    created_date: datetime = Field(default_factory=utcnow)
+    is_activated: bool = Field(default=False)
 
 
-@dataclass
 class Identity(IdentitySubject):
     id: int = 0
 
 
-@dataclass
-class IdentityItem:
+class IdentityItem(BaseModel):
     id: int
-    fname: str
-    lname: str
+    fname: str|None
+    lname: str|None
 
 
 class IdentityFields(StrEnum):
@@ -38,22 +37,20 @@ class IdentityFields(StrEnum):
     ID = 'id'
 
 
-@dataclass
-class UserSubject:
+class UserSubject(BaseModel):
     identity_id: int
     role_id: int
-    username: str = field(metadata={FieldMetaData.max_length.value: FieldLength.l_50.value})
-    pwd: str = field(metadata={FieldMetaData.max_length.value: FieldLength.l_75.value})
+    username: Annotated[str, StringConstraints(max_length=FieldLength.l_50.value)]
+    pwd: Annotated[str, StringConstraints(max_length=FieldLength.l_75.value)]
     email_2fa_enabled: bool
-    deleted_date: datetime | None = field(default=None)
+    deleted_date: datetime | None = Field(default=None)
 
+    @computed_field
     @property
     def archived(self) -> bool:
         return self.deleted_date is not None
 
 
-
-@dataclass
 class User(UserSubject):
     id: int = 0
 
@@ -68,8 +65,7 @@ class UserFields(StrEnum):
     ID = 'id'
 
 
-@dataclass
-class ProfileResponse:
+class ProfileResponse(BaseModel):
 
     identity: Identity|None
     user: User|None

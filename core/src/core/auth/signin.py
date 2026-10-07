@@ -5,7 +5,7 @@ from typing import Callable
 from core_contracts.identity.repositories import IUserRepository
 from core_contracts.temp_token.repositories import ITempTokenRepository
 from core_contracts.temp_token.models import TokenType
-from core_contracts.metainfo import FieldMetaData, metainfo_int
+from core_contracts.metainfo import get_metainfo
 from core_contracts.issues import ValidationIssue, ForbiddenIssue, ApplicationIssue
 from core_contracts.queue.emailer_2fa import Emailer2FAQueuePublisher, Email2FAVerificationMessage, VerificationEvents
 from core_contracts.identity import models as iden_model
@@ -33,7 +33,7 @@ class SignInDemandValidationFilter:
         if demand.pwd is None or len(demand.pwd) == 0:
             raise ValidationIssue('Password is required')
 
-        max_email_length = metainfo_int(iden_model.Identity, 'email', FieldMetaData.max_length.name)
+        max_email_length = get_metainfo(iden_model.Identity, iden_model.IdentityFields.EMAIL.value).max_length or 0
         if len(demand.email) > max_email_length:
             raise ValidationIssue(f'Length of email is greater than {max_email_length}')
 

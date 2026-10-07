@@ -4,12 +4,9 @@ from sqlalchemy import ForeignKey, String, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core_contracts.identity import models
-from core_contracts.metainfo import FieldMetaData, metainfo_int
+from core_contracts.metainfo import get_metainfo
 
 from repo_sqlalchemy.schema import Base, IntPK, BoolFlag, TBL
-
-
-_max_length_key = FieldMetaData.max_length.value
 
 
 class Identity(Base):
@@ -17,15 +14,15 @@ class Identity(Base):
 
     id: Mapped[IntPK]
     fname: Mapped[str|None] = mapped_column(
-        String(metainfo_int(models.Identity, models.IdentityFields.FNAME, _max_length_key))
+        String(get_metainfo(models.IdentitySubject, models.IdentityFields.FNAME).max_length)
         , nullable=True
     )
     lname: Mapped[str|None] = mapped_column(
-        String(metainfo_int(models.Identity, models.IdentityFields.LNAME, _max_length_key))
+        String(get_metainfo(models.Identity, models.IdentityFields.LNAME).max_length)
         , nullable=True
     )
     email: Mapped[str] = mapped_column(
-        String(metainfo_int(models.Identity, models.IdentityFields.EMAIL, _max_length_key))
+        String(get_metainfo(models.Identity, models.IdentityFields.EMAIL).max_length)
     )
     email_verified: Mapped[BoolFlag]
     created_date: Mapped[datetime] = mapped_column(
@@ -47,12 +44,12 @@ class User(Base):
         index=True
     )
     username: Mapped[str] = mapped_column(
-        String(metainfo_int(models.UserSubject, models.UserFields.USERNAME, _max_length_key)),
+        String(get_metainfo(models.UserSubject, models.UserFields.USERNAME).max_length),
         index=True,
         unique=True
     )
     pwd: Mapped[str] = mapped_column(
-        String(metainfo_int(models.UserSubject, models.UserFields.PWD, _max_length_key))
+        String(get_metainfo(models.UserSubject, models.UserFields.PWD).max_length)
     )
     email_2fa_enabled: Mapped[BoolFlag]
     deleted_date: Mapped[datetime | None] = mapped_column(

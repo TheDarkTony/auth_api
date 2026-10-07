@@ -1,6 +1,9 @@
 from dataclasses import dataclass, field
+from typing import Annotated
 
-from core_contracts.metainfo import FieldLength, FieldMetaData
+from pydantic import BaseModel, StringConstraints
+
+from core_contracts.metainfo import FieldLength
 
 @dataclass
 class EditDemographicsDemand:
@@ -43,7 +46,6 @@ class DemandAccepted:
     process_token: str
 
 
-@dataclass
-class Sign2FAFeedbackDemand:
-    process_token: str = field(default='', metadata={FieldMetaData.max_length.value: FieldLength.l_75.value})
-    code: str = field(default='', metadata={FieldMetaData.max_length.value: FieldLength.l_5.value})
+class Sign2FAFeedbackDemand(BaseModel):
+    process_token: Annotated[str, StringConstraints(max_length=FieldLength.l_75.value)] = ''
+    code: Annotated[str, StringConstraints(max_length=FieldLength.l_5.value)] = ''

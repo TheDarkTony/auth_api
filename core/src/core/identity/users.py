@@ -15,7 +15,6 @@ from core_contracts.permission.repositories import IRolePermissionRepository
 from core_contracts.issues import ValidationIssue, ForbiddenIssue, NotFoundEntryIssue
 
 from core.identity.demands import ChangePwdDemand, EditUserDemand
-from core.auth.signup import Settings
 
 
 class ListUsersAuthorizationFilter(ListAuthorizationFilter):

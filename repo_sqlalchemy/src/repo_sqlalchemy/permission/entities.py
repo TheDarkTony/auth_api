@@ -2,22 +2,20 @@ from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core_contracts.permission import models
-from core_contracts.metainfo import metainfo_int
+from core_contracts.metainfo import get_metainfo
 
 from repo_sqlalchemy.schema import Base, IntPK, BoolFlag, TBL
 
-
-_max_length_key = models.FieldMetaData.max_length.value
 
 class Role(Base):
     __tablename__ = TBL.ROLE.value
     
     id: Mapped[IntPK]
     name: Mapped[str] = mapped_column(
-        String(metainfo_int(models.Role, models.RoleFields.NAME, _max_length_key))
+        String(get_metainfo(models.Role, models.RoleFields.NAME).max_length)
     )
     description: Mapped[str] = mapped_column(
-        String(metainfo_int(models.Role, models.RoleFields.DESCRIPTION, _max_length_key))
+        String(get_metainfo(models.Role, models.RoleFields.DESCRIPTION).max_length)
     )
 
 
@@ -26,10 +24,10 @@ class ApplicationResource(Base):
 
     id: Mapped[IntPK]
     name: Mapped[str] = mapped_column(
-        String(metainfo_int(models.ApplicationResource, models.ApplicationResourceFields.NAME, _max_length_key))
+        String(get_metainfo(models.ApplicationResource, models.ApplicationResourceFields.NAME).max_length)
     )
     description: Mapped[str] = mapped_column(
-        String(metainfo_int(models.ApplicationResource, models.ApplicationResourceFields.DESCRIPTION, _max_length_key))
+        String(get_metainfo(models.ApplicationResource, models.ApplicationResourceFields.DESCRIPTION).max_length)
     )
 
 

@@ -6,9 +6,9 @@ from typing import Callable
 from dataclasses import dataclass, field
 
 from core_contracts.identity.repositories import IIdentityRepository, IUserRepository
-from core_contracts.identity.models import Identity, UserSubject
+from core_contracts.identity.models import Identity, UserSubject, IdentityFields
 from core_contracts.issues import ValidationIssue, ApplicationIssue, ConfigurationIssue
-from core_contracts.metainfo import FieldMetaData, metainfo_int
+from core_contracts.metainfo import get_metainfo
 from core_contracts.temp_token.repositories import ITempTokenRepository
 
 from core_contracts.queue.emailer_2fa import Email2FAVerificationMessage, Emailer2FAQueuePublisher, VerificationEvents
@@ -51,7 +51,7 @@ class VerifySignUpDemandFilter:
         if demand.pwd is None or len(demand.pwd) == 0:
             raise ValidationIssue('Password is required')
 
-        max_email_length = metainfo_int(Identity, 'email', FieldMetaData.max_length.name)
+        max_email_length = get_metainfo(Identity, IdentityFields.EMAIL.value).max_length or 0
         if len(demand.email) > max_email_length:
             raise ValidationIssue(f'Length of email is greater than {max_email_length}')
 
@@ -88,7 +88,7 @@ class SignUpHandler(Handler):
         identity = self._identity_repo.fetch_by_email(demand.email)
 
         if identity is None:
-            identity = Identity(demand.email, False)
+            identity = Identity(email=demand.email, email_verified=False, fname=None, lname=None)
             identity = self._identity_repo.save(identity)
 
         if identity.is_activated:
@@ -186,11 +186,11 @@ class SignUp2FAVerificationHandler(Handler):
         identity.email_verified = True
 
         usr = UserSubject(
-            identity.id,
-            self.settings.default_role_id,
-            identity.email,
-            pwd,
-            self.settings.default_email_2fa_enabled
+            identity_id=identity.id,
+            role_id=self.settings.default_role_id,
+            username=identity.email,
+            pwd=pwd,
+            email_2fa_enabled=self.settings.default_email_2fa_enabled
         )
 
         identity, user = self._identity_repo.update_and_attach_user(identity, usr)

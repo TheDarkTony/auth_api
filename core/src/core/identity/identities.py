@@ -3,7 +3,7 @@ from typing import Callable
 from core.handler import Handler, DemandContext, Response, Pipeline, get_default_pipeline, ListAuthorizationFilter, MessageType
 
 from core_contracts.base import AccessMode, Resources, IdentityArguments, PagginationArguments, BatchResponse
-from core_contracts.metainfo import FieldMetaData, metainfo_int
+from core_contracts.metainfo import get_metainfo
 from core_contracts.issues import ValidationIssue, NotFoundEntryIssue, ForbiddenIssue
 from core_contracts.identity.repositories import IIdentityRepository
 from core_contracts.permission.repositories import IRolePermissionRepository
@@ -28,12 +28,12 @@ def verify_identity_argument_filter(ctx: DemandContext, next: Callable[[], Respo
 def verify_edit_demographics_demand_filter(ctx: DemandContext, next: Callable[[], Response]) -> Response:
     
     demand = ctx.get_demand(EditDemographicsDemand)
-    max_fname_length = metainfo_int(Identity, IdentityFields.FNAME, FieldMetaData.max_length)
-    if len(demand.fname) > max_fname_length:
+    max_fname_length = get_metainfo(Identity, IdentityFields.FNAME).max_length
+    if max_fname_length is not None and len(demand.fname) > max_fname_length:
         raise ValidationIssue(f'Length of email is greater than {max_fname_length}')
 
-    max_lname_length = metainfo_int(Identity, IdentityFields.LNAME, FieldMetaData.max_length)
-    if len(demand.lname) > max_lname_length:
+    max_lname_length = get_metainfo(Identity, IdentityFields.LNAME).max_length
+    if max_lname_length is not None and len(demand.lname) > max_lname_length:
         raise ValidationIssue(f'Length of email is greater than {max_lname_length}')
 
     return next()
@@ -95,20 +95,20 @@ def verify_identity_lookup_args_filter(ctx: DemandContext, next: Callable[[], Re
     
     fname = ctx.arguments.get(IdentityFields.FNAME)
     if fname is not None:
-        max_length = metainfo_int(Identity, IdentityFields.FNAME, FieldMetaData.max_length)
-        if len(fname) > max_length:
+        max_length = get_metainfo(Identity, IdentityFields.FNAME).max_length
+        if max_length is not None and len(fname) > max_length:
             raise ValidationIssue('Length of first name is greater than allowed')
 
     lname = ctx.arguments.get(IdentityFields.LNAME)
     if lname is not None:
-        max_length = metainfo_int(Identity, IdentityFields.LNAME, FieldMetaData.max_length)
-        if len(lname) > max_length:
+        max_length = get_metainfo(Identity, IdentityFields.LNAME).max_length
+        if max_length is not None and len(lname) > max_length:
             raise ValidationIssue('Length of last name is greater than allowed')
 
     email = ctx.arguments.get(IdentityFields.EMAIL)
     if email is not None:
-        max_length = metainfo_int(Identity, IdentityFields.EMAIL, FieldMetaData.max_length)
-        if len(email) > max_length:
+        max_length = get_metainfo(Identity, IdentityFields.EMAIL).max_length
+        if max_length is not None and len(email) > max_length:
             raise ValidationIssue('Length of last name is greater than allowed')
 
     return next()
