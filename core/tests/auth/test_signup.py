@@ -3,7 +3,7 @@ import pytest
 from core_contracts.identity.repositories import IIdentityRepository
 from core_contracts.identity.models import Identity, User
 from core_contracts.queue.emailer_2fa import Email2FAVerificationMessage, Emailer2FAQueuePublisher
-from core.auth.signup import SignUpHandler, pipeline_signup, Settings
+from core.auth.signup import SignUpHandler, pipeline_signup
 from core.handler import Pipeline, DemandContext, MessageType, Response
 
 from tests.conftest import FakeIdentityRepo, MockEmail2FaVerificationQueue, FakeUserRepo
@@ -12,7 +12,7 @@ from tests.auth.conftest import BabRequestCase
 
 @pytest.fixture(scope='class')
 def emailer_queue(monkey) -> Emailer2FAQueuePublisher:
-    def send_2fa_code_via_email(q, message: Email2FAVerificationMessage):
+    def send_2fa_code_via_email(q, message: Email2FAVerificationMessage, correlation_id: str|None):
         assert message.email is not None
         assert message.pwd is not None
         assert message.code_seconds_ttl > 0
@@ -99,7 +99,7 @@ class TestSignUpWithEmailCollision(BabRequestCase):
     def identity_repo(cls, monkey) -> IIdentityRepository:
         def get_identity(repo, email) -> Identity|None:
             assert email is not None
-            return Identity(email, True, id=99, is_activated=True)
+            return Identity(email=email, email_verified=True, fname=None, lname=None, is_activated=True, id=99)
 
         monkey.setattr(FakeIdentityRepo, FakeIdentityRepo.fetch_by_email.__name__, get_identity)
         return FakeIdentityRepo()
@@ -109,7 +109,15 @@ class TestSignUpWithEmailCollision(BabRequestCase):
     def user_repo(cls, monkey):
         def fetch_by_usrname(repo, usrname):
             assert usrname is not None
-            return User(99, 4, usrname, 'test@123', True, None, 100)
+            return User(
+                identity_id=99,
+                role_id=4,
+                username=usrname,
+                pwd='test@123',
+                email_2fa_enabled=True,
+                deleted_date=None,
+                id=100
+            )
         
         monkey.setattr(FakeUserRepo, FakeUserRepo.fetch_by_usrname.__name__, fetch_by_usrname)
         return FakeUserRepo()

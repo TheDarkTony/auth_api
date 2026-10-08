@@ -1,10 +1,13 @@
-from typing import Callable, Any, Type, Protocol
+from typing import Callable, Any, Protocol
 from enum import IntEnum
 from dataclasses import dataclass, field, fields
 from datetime import datetime
 import uuid, contextvars
 
+from pydantic import BaseModel, ValidationError
+
 from core_contracts.metainfo import DataclassModel
+from core_contracts.issues import ValidationIssue
 
 
 TRACE_ID = contextvars.ContextVar("trace_id", default='')
@@ -59,7 +62,7 @@ class DemandContext:
         return TRACE_ID.get()
 
 
-    def get_demand[TDemand:DataclassModel](self, demand_type: Type[TDemand]) -> TDemand:
+    def get_demand[TDemand:DataclassModel](self, demand_type: type[TDemand]) -> TDemand:
 
         if self.demand is None:
             raise Exception('Invalid behavior. Demand is None.')
@@ -68,6 +71,15 @@ class DemandContext:
         if isinstance(self.demand, demand_type):
             return self.demand
 
+        if issubclass(demand_type, BaseModel):
+            try:
+                from_obj_attr = not isinstance(self.demand, dict)
+                self.demand = demand_type.model_validate(self.demand, from_attributes=from_obj_attr)
+                return self.demand
+            except ValidationError as ex:
+                raise ValidationIssue(str(ex))
+
+
         demand_fields = fields(demand_type)
         args: dict
         if isinstance(demand, dict):
@@ -75,7 +87,8 @@ class DemandContext:
         else:
             args = { field.name: getattr(demand, field.name, field.default) for field in demand_fields }
 
-        return demand_type(**args)
+        self.demand = demand_type(**args)
+        return self.demand
 
 
 FilterCallable = Callable[[DemandContext, Callable[[], Response]], Response]

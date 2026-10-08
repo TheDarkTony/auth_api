@@ -85,5 +85,5 @@ class FakeUserRepo(IUserRepository):
 
 class MockEmail2FaVerificationQueue(Emailer2FAQueuePublisher):
 
-    def send_2fa_code_via_email(self, data: Email2FAVerificationMessage, correlation_id: str | None = None):
+    def send_2fa_code_via_email(self, data: Email2FAVerificationMessage, correlation_id: str | None):
         raise NotImplementedError
