@@ -161,24 +161,7 @@ def pipeline_delete_user(perm_repo: IRolePermissionRepository) -> Pipeline:
 
 
 def validate_change_pwd_demand_filter(ctx: DemandContext, next: Callable[[], Response]) -> Response:
-
-    demand = ctx.get_demand(ChangePwdDemand)
-
-    if demand is None:
-        raise ValidationIssue('Demand body is required')
-
-    if demand.old_pwd is None:
-        raise ValidationIssue('old password is required')
-
-    if demand.new_pwd is None:
-        raise ValidationIssue('new password is required')
-
-    if demand.new_pwd_confirmed is None:
-        raise ValidationIssue('password confirmation is required')
-
-    if demand.new_pwd != demand.new_pwd_confirmed:
-        raise ValidationIssue('new password and confirmation does not match')
-
+    ctx.get_demand(ChangePwdDemand)
     return next()
 
 
@@ -214,11 +197,7 @@ def pipeline_change_pwd(perm_repo: IRolePermissionRepository) -> Pipeline:
 
 
 def verify_edit_user_demand_filter(ctx: DemandContext, next: Callable[[], Response]) -> Response:
-
-    demand = ctx.get_demand(EditUserDemand)
-    if demand is None or demand.email_2fa_enabled is None:
-        raise ValidationIssue('Demand data is required.')
-
+    ctx.get_demand(EditUserDemand)
     return next()
 
 

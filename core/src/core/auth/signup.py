@@ -6,9 +6,8 @@ from typing import Callable
 from dataclasses import dataclass, field
 
 from core_contracts.identity.repositories import IIdentityRepository, IUserRepository
-from core_contracts.identity.models import Identity, UserSubject, IdentityFields
+from core_contracts.identity.models import Identity, UserSubject
 from core_contracts.issues import ValidationIssue, ApplicationIssue, ConfigurationIssue
-from core_contracts.metainfo import get_metainfo
 from core_contracts.temp_token.repositories import ITempTokenRepository
 
 from core_contracts.queue.emailer_2fa import Email2FAVerificationMessage, Emailer2FAQueuePublisher, VerificationEvents
@@ -42,22 +41,7 @@ class VerifySignUpDemandFilter:
         self.settings: Settings = settings
 
     def verify(self, ctx: DemandContext, next: Callable[[], Response]) -> Response:
-        
-        demand = ctx.get_demand(SignUpDemand)
-        
-        if demand.email is None or len(demand.email) == 0:
-            raise ValidationIssue('Email is required')
-        
-        if demand.pwd is None or len(demand.pwd) == 0:
-            raise ValidationIssue('Password is required')
-
-        max_email_length = get_metainfo(Identity, IdentityFields.EMAIL.value).max_length or 0
-        if len(demand.email) > max_email_length:
-            raise ValidationIssue(f'Length of email is greater than {max_email_length}')
-
-        if not self.settings.email_regex.match(demand.email):
-            raise ValidationIssue('Value of email is invalid. It should contain at least @ and dot')
-
+        ctx.get_demand(SignUpDemand, {'email_regex': self.settings.email_regex})
         return next()
 
 

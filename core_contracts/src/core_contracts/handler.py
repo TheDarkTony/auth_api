@@ -62,7 +62,7 @@ class DemandContext:
         return TRACE_ID.get()
 
 
-    def get_demand[TDemand:DataclassModel](self, demand_type: type[TDemand]) -> TDemand:
+    def get_demand[TDemand:DataclassModel|BaseModel](self, demand_type: type[TDemand], ctx: dict|None=None) -> TDemand:
 
         if self.demand is None:
             raise Exception('Invalid behavior. Demand is None.')
@@ -74,11 +74,10 @@ class DemandContext:
         if issubclass(demand_type, BaseModel):
             try:
                 from_obj_attr = not isinstance(self.demand, dict)
-                self.demand = demand_type.model_validate(self.demand, from_attributes=from_obj_attr)
+                self.demand = demand_type.model_validate(self.demand, from_attributes=from_obj_attr, context=ctx)
                 return self.demand
             except ValidationError as ex:
-                raise ValidationIssue(str(ex))
-
+                raise ValidationIssue('. '.join([f"{x.get('input')}:{x.get('msg')}" for x in ex.errors()]))
 
         demand_fields = fields(demand_type)
         args: dict

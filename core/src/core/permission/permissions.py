@@ -3,7 +3,7 @@ from typing import Callable
 
 from core_contracts.handler import MessageType
 from core_contracts.issues import ValidationIssue, NotFoundEntryIssue, ForbiddenIssue
-from core_contracts.base import AccessMode, Resources
+from core_contracts.base import Resources
 from core_contracts.permission.repositories import (IRolePermissionRepository
                                               , IApplicationResourceRepository
                                               , IRoleRepository
@@ -120,28 +120,12 @@ def validate_perm_id_arg_filter(ctx: DemandContext, next: Callable[[], Response]
 
 
 def validate_perm_demand_filter(ctx: DemandContext, next: Callable[[], Response]) -> Response:
+    ctx.get_demand(PermissionDemand)
+    return next()
 
-    demand = ctx.get_demand(PermissionDemand)
 
-    mode = demand.mode
-    if mode is not None and not (mode == AccessMode.own or mode == AccessMode.nonown):
-        raise ValidationIssue('invalid value of mode')
-
-    if demand.allow_enumerate is None:
-        raise ValidationIssue('allow_enumerate is required')
-
-    if demand.allow_read is None:
-        raise ValidationIssue('allow_read is required')
-
-    if demand.allow_create is None:
-        raise ValidationIssue('allow_create is required')
-
-    if demand.allow_edit is None:
-        raise ValidationIssue('allow_edit is required')
-
-    if demand.allow_delete is None:
-        raise ValidationIssue('allow_delete is required')
-    
+def validate_new_perm_demand_filter(ctx: DemandContext, next: Callable[[], Response]) -> Response:
+    ctx.get_demand(NewPermissionDemand)
     return next()
 
 
@@ -249,7 +233,7 @@ class CreatePermissionAuthorizationFilter(_PermissionAuthorizationFilter):
 def create_permission_pipeline(perm_repo: IRolePermissionRepository) -> Pipeline:
     pipeline = get_default_pipeline()
     pipeline.use(validate_list_arguments_filter)
-    pipeline.use(validate_perm_demand_filter)
+    pipeline.use(validate_new_perm_demand_filter)
     pipeline.use(CreatePermissionAuthorizationFilter(perm_repo).authorize_operation)
     return pipeline
 

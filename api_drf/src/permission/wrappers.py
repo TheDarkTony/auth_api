@@ -1,7 +1,7 @@
 from core_contracts.handler import DemandContext, Response, PipelineProtocol, Handler
 
 from core.permission.permissions import Arguments
-from core.permission.demands import PermissionDemand
+
 
 class DemandHandlerWrapper:
     def __init__(self, pipeline: PipelineProtocol, handler: Handler) -> None:
@@ -36,7 +36,7 @@ class ListPermissionsWrapper(DemandHandlerWrapper):
 
 class EditPermissionWrapper(DemandHandlerWrapper):
 
-    def edit_permission(self, ctx: DemandContext, role_id, resource_id, permission_id, demand: PermissionDemand) -> Response:
+    def edit_permission(self, ctx: DemandContext, role_id, resource_id, permission_id) -> Response:
 
         if role_id is not None:
             ctx.arguments[Arguments.ROLE_ID] = int(role_id)
@@ -47,22 +47,18 @@ class EditPermissionWrapper(DemandHandlerWrapper):
         if permission_id is not None:
             ctx.arguments[Arguments.PERMISSION_ID] = int(permission_id)
 
-        ctx.demand = demand
-
         return self._pipeline.execute(ctx, self._handler)
 
 
 class CreatePermissionWrapper(DemandHandlerWrapper):
 
-    def create_permission(self, ctx: DemandContext, role_id, resource_id, demand: PermissionDemand) -> Response:
+    def create_permission(self, ctx: DemandContext, role_id, resource_id) -> Response:
 
         if role_id is not None:
             ctx.arguments[Arguments.ROLE_ID] = int(role_id)
 
         if resource_id is not None:
             ctx.arguments[Arguments.RESOURCE_ID] = int(resource_id)
-
-        ctx.demand = demand
 
         return self._pipeline.execute(ctx, self._handler)
 

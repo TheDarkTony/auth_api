@@ -3,8 +3,6 @@ from rest_framework.reverse import reverse
 
 from src.api_core.serializers import BatchSerializer, ResultSerializer
 
-from core.identity.demands import EditDemographicsDemand, EditUserDemand, ChangePwdDemand
-
 
 class LinkedModelSerializer(serializers.Serializer):
     def to_representation(self, instance):
@@ -26,7 +24,6 @@ class IdentityItemSerializer(LinkedModelSerializer):
 
 
 #serializing response
-
 class IdentitySerializer(LinkedModelSerializer):
     id = serializers.BigIntegerField()
     url = serializers.CharField(allow_null=True)
@@ -47,14 +44,6 @@ class IdentityDemographicsSerializer(serializers.Serializer):
     fname = serializers.CharField(allow_null=True)
     lname = serializers.CharField(allow_null=True)
 
-    def create(self, validated_data) -> EditDemographicsDemand:
-        return EditDemographicsDemand(**validated_data)
-
-    @property
-    def demand(self) -> EditDemographicsDemand:
-        self.is_valid()
-        return self.create(self.validated_data)
-
 
 class UserSerializer(LinkedModelSerializer):
     id = serializers.BigIntegerField()
@@ -68,27 +57,11 @@ class UserSerializer(LinkedModelSerializer):
 class EditUserSerializer(serializers.Serializer):
     email_2fa_enabled= serializers.BooleanField()
 
-    def create(self, validated_data):
-        return EditUserDemand(**validated_data)
-
-    @property
-    def demand(self) -> EditUserDemand:
-        self.is_valid()
-        return self.create(self.validated_data)
-
 
 class ChangeUserPwdSerializer(serializers.Serializer):
     old_pwd = serializers.CharField(allow_null=True)
     new_pwd = serializers.CharField(allow_null=True)
     new_pwd_confirmed = serializers.CharField(allow_null=True)
-
-    def create(self, validated_data):
-        return ChangePwdDemand(**validated_data)
-
-    @property
-    def demand(self) -> ChangePwdDemand:
-        self.is_valid()
-        return self.create(self.validated_data)
 
 
 class UsersBatchSerializer(BatchSerializer):

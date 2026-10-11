@@ -26,16 +26,7 @@ def verify_identity_argument_filter(ctx: DemandContext, next: Callable[[], Respo
 
 
 def verify_edit_demographics_demand_filter(ctx: DemandContext, next: Callable[[], Response]) -> Response:
-    
-    demand = ctx.get_demand(EditDemographicsDemand)
-    max_fname_length = get_metainfo(Identity, IdentityFields.FNAME).max_length
-    if max_fname_length is not None and len(demand.fname) > max_fname_length:
-        raise ValidationIssue(f'Length of email is greater than {max_fname_length}')
-
-    max_lname_length = get_metainfo(Identity, IdentityFields.LNAME).max_length
-    if max_lname_length is not None and len(demand.lname) > max_lname_length:
-        raise ValidationIssue(f'Length of email is greater than {max_lname_length}')
-
+    ctx.get_demand(EditDemographicsDemand)
     return next()
 
 

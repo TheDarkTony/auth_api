@@ -2,9 +2,6 @@ from rest_framework import serializers
 from rest_framework.reverse import reverse
 from src.api_core.serializers import ResultSerializer, append_query
 
-from core.permission.demands import NewPermissionDemand, PermissionDemand
-
-
 
 class AppResourceSerializer(serializers.Serializer):
     id = serializers.IntegerField()
@@ -26,26 +23,10 @@ class PermissionSubjectSerializer(serializers.Serializer):
     allow_edit = serializers.BooleanField()
     allow_delete = serializers.BooleanField()
 
-    def create(self, validated_data):
-            return PermissionDemand(**validated_data)
-    
-    @property
-    def demand(self) -> PermissionDemand:
-        self.is_valid()
-        return self.create(self.validated_data)
-
 
 class NewPermissionSerializer(PermissionSubjectSerializer):
     role_id = serializers.IntegerField(allow_null=True)
     resource_id = serializers.IntegerField(allow_null=True)
-
-    def create(self, validated_data):
-        return NewPermissionDemand(**validated_data)
-
-    @property
-    def demand(self) -> NewPermissionDemand:
-        self.is_valid()
-        return self.create(self.validated_data)
 
 
 class PermissionSerializer(PermissionSubjectSerializer):

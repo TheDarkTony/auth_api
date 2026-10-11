@@ -1,4 +1,3 @@
-from typing import cast
 from datetime import datetime, timezone
 
 from rest_framework.decorators import api_view
@@ -70,10 +69,14 @@ def signup(request
     if request.method == 'GET':
         return _dummy_browsable_api('Please enter your credentials')
     
-    demand = cast(SignUpSerializer, SignUpSerializer(data=request.data)).demand
-    result = offerer.sign_up(request.demand_context, demand)
-    serializer = SingUpResultSerializer(result, context={'request': request, 'viewname': None})
-    return Offer(serializer, result).offer
+    request_serializer = SignUpSerializer(data=request.data)
+    request_serializer.is_valid()
+    request.demand_context.demand = request_serializer.validated_data
+
+    result = offerer.sign_up(request.demand_context)
+
+    response_serializer = SingUpResultSerializer(result, context={'request': request, 'viewname': None})
+    return Offer(response_serializer, result).offer
 
 
 @attach_serializer(Sign2FAFeedbackSerializer)
@@ -86,10 +89,14 @@ def signup_2fa(request
     if request.method == 'GET':
         return _dummy_browsable_api('Please enter 2FA data')
     
-    demand = cast(Sign2FAFeedbackSerializer, Sign2FAFeedbackSerializer(data=request.data)).demand
-    result = offerer.verify_2fa_signup(request.demand_context, demand)
-    serializer = SingUp2FAFeedbackResultSerializer(result, context={'request': request, 'viewname': None})
-    return Offer(serializer, result).offer
+    request_serializer = Sign2FAFeedbackSerializer(data=request.data)
+    request_serializer.is_valid()
+    request.demand_context.demand = request_serializer.validated_data
+
+    result = offerer.verify_2fa_signup(request.demand_context)
+
+    response_serializer = SingUp2FAFeedbackResultSerializer(result, context={'request': request, 'viewname': None})
+    return Offer(response_serializer, result).offer
 
 
 @attach_serializer(SignInSerializer)
@@ -102,17 +109,21 @@ def signin(request
     if request.method == 'GET':
         return _dummy_browsable_api('Please enter your credentials')
     
-    demand = cast(SignInSerializer, SignInSerializer(data=request.data)).demand
-    result = offerer.sign_in(request.demand_context, demand)
+    request_serializer = SignInSerializer(data=request.data)
+    request_serializer.is_valid()
+    request.demand_context.demand = request_serializer.validated_data
+
+    result = offerer.sign_in(request.demand_context)
 
     if result.status == 200:
-        serializer = SignIn200ResultSerializer(result, context={'request': request, 'viewname': None})
+        response_serializer = SignIn200ResultSerializer(result, context={'request': request, 'viewname': None})
     elif result.status == 202:
-        serializer = SignIn202ResultSerializer(result, context={'request': request, 'viewname': None})
+        response_serializer = SignIn202ResultSerializer(result, context={'request': request, 'viewname': None})
     else:
-        serializer = ResultSerializer(result, context={'request': request, 'viewname': None})
+        response_serializer = ResultSerializer(result, context={'request': request, 'viewname': None})
 
-    return Offer(serializer, result).offer
+    return Offer(response_serializer, result).offer
+
 
 @attach_serializer(Sign2FAFeedbackSerializer)
 @allow_anonymous()
@@ -123,8 +134,12 @@ def signin_2fa(request
 ):
     if request.method == 'GET':
         return _dummy_browsable_api('Please enter 2FA data')
-    
-    demand = cast(Sign2FAFeedbackSerializer, Sign2FAFeedbackSerializer(data=request.data)).demand
-    result = offerer.verify_2fa_signin(request.demand_context, demand)
-    serializer = SignIn200ResultSerializer(result, context={'request': request, 'viewname': None})
-    return Offer(serializer, result).offer
+
+    request_serializer = Sign2FAFeedbackSerializer(data=request.data)
+    request_serializer.is_valid()
+    request.demand_context.demand = request_serializer.validated_data
+
+    result = offerer.verify_2fa_signin(request.demand_context)
+
+    response_serializer = SignIn200ResultSerializer(result, context={'request': request, 'viewname': None})
+    return Offer(response_serializer, result).offer
