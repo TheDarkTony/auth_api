@@ -1,16 +1,16 @@
-from dataclasses import dataclass, field
+from typing import Annotated, Any
 from enum import StrEnum
 
-from core_contracts.metainfo import FieldMetaData, FieldLength
+from pydantic import BaseModel, StringConstraints
+
+from core_contracts.metainfo import FieldLength
 
 
-@dataclass
-class RoleSubject:
-    name: str = field(metadata={FieldMetaData.max_length.value: FieldLength.l_25.value})
-    description: str = field(metadata={FieldMetaData.max_length.value: FieldLength.l_100.value})
+class RoleSubject(BaseModel):
+    name: Annotated[str, StringConstraints(max_length=FieldLength.l_25.value)]
+    description: Annotated[str, StringConstraints(max_length=FieldLength.l_100.value)]
 
 
-@dataclass
 class Role(RoleSubject):
     id: int = 0
 
@@ -21,13 +21,11 @@ class RoleFields(StrEnum):
     ID = 'id'
 
 
-@dataclass
-class ApplicationResourceSubject:
-    name: str = field(metadata={FieldMetaData.max_length.value: FieldLength.l_25.value})
-    description: str = field(metadata={FieldMetaData.max_length.value:FieldLength.l_100.value})
+class ApplicationResourceSubject(BaseModel):
+    name: Annotated[str, StringConstraints(max_length=FieldLength.l_25.value)]
+    description: Annotated[str, StringConstraints(max_length=FieldLength.l_100.value)]
 
 
-@dataclass
 class ApplicationResource(ApplicationResourceSubject):
     id: int = 0
 
@@ -38,8 +36,7 @@ class ApplicationResourceFields(StrEnum):
     ID = 'id'
 
 
-@dataclass
-class PermissionSubject:
+class PermissionSubject(BaseModel):
     role_id: int | None
     resource_id: int | None
 
@@ -51,7 +48,6 @@ class PermissionSubject:
     allow_delete: bool
 
 
-@dataclass
 class RolePermission(PermissionSubject):
     id: int = 0
 
@@ -67,12 +63,12 @@ class RolePermissionFields(StrEnum):
     ALLOW_DELETE = 'allow_delete'
     ID = 'id'
 
-@dataclass
+
 class Permission(RolePermission):
     weight: int = 9999
     name: str | None = None
 
-    def __post_init__(self):
+    def model_post_init(self, context: Any) -> None:
         if self.resource_id is not None and self.role_id is not None:
             self.name = 'role permission'
             self.weight = 2 if self.mode is None else 1
@@ -88,7 +84,3 @@ class Permission(RolePermission):
         elif self.resource_id is not None and self.role_id is None:
             self.name = 'default role permission'
             self.weight = 7
-        
-
-        
-        

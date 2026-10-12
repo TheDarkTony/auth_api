@@ -1,9 +1,9 @@
 from enum import StrEnum
 from typing import Callable
 
-from core_contracts.handler import Claims, MessageType
+from core_contracts.handler import MessageType
 from core_contracts.issues import ValidationIssue, NotFoundEntryIssue, ForbiddenIssue
-from core_contracts.base import AccessMode, Resources
+from core_contracts.base import Resources
 from core_contracts.permission.repositories import (IRolePermissionRepository
                                               , IApplicationResourceRepository
                                               , IRoleRepository
@@ -14,7 +14,6 @@ from core.handler import (Handler
                           , DemandContext
                           , Response
                           , ListAuthorizationFilter
-                          , SingleItemAuthorizationFilter
                           , get_default_pipeline
                           , Pipeline)
 
@@ -121,28 +120,12 @@ def validate_perm_id_arg_filter(ctx: DemandContext, next: Callable[[], Response]
 
 
 def validate_perm_demand_filter(ctx: DemandContext, next: Callable[[], Response]) -> Response:
+    ctx.get_demand(PermissionDemand)
+    return next()
 
-    demand = ctx.get_demand(PermissionDemand)
 
-    mode = demand.mode
-    if mode is not None and not (mode == AccessMode.own or mode == AccessMode.nonown):
-        raise ValidationIssue('invalid value of mode')
-
-    if demand.allow_enumerate is None:
-        raise ValidationIssue('allow_enumerate is required')
-
-    if demand.allow_read is None:
-        raise ValidationIssue('allow_read is required')
-
-    if demand.allow_create is None:
-        raise ValidationIssue('allow_create is required')
-
-    if demand.allow_edit is None:
-        raise ValidationIssue('allow_edit is required')
-
-    if demand.allow_delete is None:
-        raise ValidationIssue('allow_delete is required')
-    
+def validate_new_perm_demand_filter(ctx: DemandContext, next: Callable[[], Response]) -> Response:
+    ctx.get_demand(NewPermissionDemand)
     return next()
 
 
@@ -250,7 +233,7 @@ class CreatePermissionAuthorizationFilter(_PermissionAuthorizationFilter):
 def create_permission_pipeline(perm_repo: IRolePermissionRepository) -> Pipeline:
     pipeline = get_default_pipeline()
     pipeline.use(validate_list_arguments_filter)
-    pipeline.use(validate_perm_demand_filter)
+    pipeline.use(validate_new_perm_demand_filter)
     pipeline.use(CreatePermissionAuthorizationFilter(perm_repo).authorize_operation)
     return pipeline
 
@@ -283,31 +266,10 @@ class CreatePermissionHandler(Handler):
         if mismatch is not None:
             raise ValidationIssue('State mismatch is detected. Please correct your request')
 
-        perm = RolePermission(
-            demand.role_id,
-            demand.resource_id,
-            demand.mode,
-            demand.allow_enumerate,
-            demand.allow_read,
-            demand.allow_create,
-            demand.allow_edit,
-            demand.allow_delete
-        )
-
+        perm = RolePermission.model_validate(demand, from_attributes=True)
         perm = self._perm_repo.save(perm)
-
-        return Response(200, data=Permission(
-                perm.role_id,
-                perm.resource_id,
-                perm.mode,
-                perm.allow_enumerate,
-                perm.allow_read,
-                perm.allow_create,
-                perm.allow_edit,
-                perm.allow_delete,
-                id=perm.id
-            )
-        )
+        resp = Permission.model_validate(perm, from_attributes=True)
+        return Response(200, data=resp)
 
 
 class DeletePermissionAuthorizationFilter(_PermissionAuthorizationFilter):
@@ -369,15 +331,5 @@ class FetchPermissionHandler(Handler):
             resp.add_message('Permission is not located', MessageType.info)
             return resp
 
-        return Response(200, data=Permission(
-                perm.role_id,
-                perm.resource_id,
-                perm.mode,
-                perm.allow_enumerate,
-                perm.allow_read,
-                perm.allow_create,
-                perm.allow_edit,
-                perm.allow_delete,
-                id=perm.id
-            )
-        )
+        resp = Permission.model_validate(perm, from_attributes=True)
+        return Response(200, data=resp)

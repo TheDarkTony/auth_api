@@ -4,7 +4,7 @@ from typing import Callable, Any
 from dataclasses import asdict
 
 from core_contracts.handler import Claims
-from core_contracts.metainfo import FieldMetaData, metainfo_int
+from core_contracts.metainfo import get_metainfo
 from core_contracts.issues import ValidationIssue, ConfigurationIssue
 
 from core.utils import utc_plus_delta
@@ -85,12 +85,12 @@ def verify_2fa_feedback_demand_filter(ctx: DemandContext, next: Callable[[], Res
     if demand.code is None or len(demand.code) == 0:
         raise ValidationIssue('Code is required.')
 
-    token_max_length = metainfo_int(Sign2FAFeedbackDemand, 'process_token', FieldMetaData.max_length.name)
-    if len(demand.process_token) > token_max_length:
+    token_max_length = get_metainfo(Sign2FAFeedbackDemand, 'process_token').max_length
+    if token_max_length is not None and len(demand.process_token) > token_max_length:
         raise ValidationIssue(f'Wrong token value.')
     
-    code_max_length = metainfo_int(Sign2FAFeedbackDemand, 'code', FieldMetaData.max_length.name)
-    if len(demand.code) > code_max_length:
+    code_max_length = get_metainfo(Sign2FAFeedbackDemand, 'code').max_length
+    if code_max_length is not None and len(demand.code) > code_max_length:
         raise ValidationIssue(f'Value of code is invalid.')
 
     return next()

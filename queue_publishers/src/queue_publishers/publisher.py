@@ -16,6 +16,7 @@ _connections: dict[int, tuple[pika.BlockingConnection, datetime]] = {}
 _disposed: bool = False
 
 def dispose():
+    """#DEPRICATED"""
     global _disposed
 
     if _disposed:
@@ -37,6 +38,7 @@ def dispose():
 
 
 class QueueManager:
+    """#DEPRICATED"""
 
     class Publisher:
 

@@ -5,7 +5,6 @@ from typing import Callable
 from core_contracts.identity.repositories import IUserRepository
 from core_contracts.temp_token.repositories import ITempTokenRepository
 from core_contracts.temp_token.models import TokenType
-from core_contracts.metainfo import FieldMetaData, metainfo_int
 from core_contracts.issues import ValidationIssue, ForbiddenIssue, ApplicationIssue
 from core_contracts.queue.emailer_2fa import Emailer2FAQueuePublisher, Email2FAVerificationMessage, VerificationEvents
 from core_contracts.identity import models as iden_model
@@ -24,22 +23,7 @@ class SignInDemandValidationFilter:
         self.settings: Settings = settings
 
     def verify(self, ctx: DemandContext, next: Callable[[], Response]) -> Response:
-        
-        demand = ctx.get_demand(SignInDemand)
-
-        if demand.email is None or len(demand.email) == 0:
-            raise ValidationIssue('Email is required')
-        
-        if demand.pwd is None or len(demand.pwd) == 0:
-            raise ValidationIssue('Password is required')
-
-        max_email_length = metainfo_int(iden_model.Identity, 'email', FieldMetaData.max_length.name)
-        if len(demand.email) > max_email_length:
-            raise ValidationIssue(f'Length of email is greater than {max_email_length}')
-
-        if not self.settings.email_regex.match(demand.email):
-            raise ValidationIssue('Value of email is invalid. It should contain at least @ and dot')
-
+        ctx.get_demand(SignInDemand, ctx={'email_regex': self.settings.email_regex})
         return next()
 
 

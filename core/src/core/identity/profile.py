@@ -64,7 +64,7 @@ class FetchProfileHandler(Handler):
             if user is None:
                 raise NotFoundEntryIssue('User is not located')
 
-        return Response(200, data=ProfileResponse(identity, user))
+        return Response(200, data=ProfileResponse(identity=identity, user=user))
 
 
 def pipeline_fetch_profile(perm_repo: IRolePermissionRepository) -> Pipeline:

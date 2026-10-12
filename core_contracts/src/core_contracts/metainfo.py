@@ -1,9 +1,6 @@
-from enum import IntEnum, StrEnum
+from enum import IntEnum
 from typing import Protocol, ClassVar, Dict, Any, Type
-
-
-class FieldMetaData(StrEnum):
-    max_length = 'max_length'
+from pydantic import BaseModel, StringConstraints
 
 
 class FieldLength(IntEnum):
@@ -18,5 +15,13 @@ class DataclassModel(Protocol):
     __dataclass_fields__: ClassVar[Dict[str, Any]]
 
 
-def metainfo_int(model: Type[DataclassModel], field: str, metakey: str) -> int:
-    return model.__dataclass_fields__[field].metadata.get(metakey)
+def get_metainfo(model: Type[BaseModel], field_name: str) -> StringConstraints:
+    field = model.model_fields.get(field_name, None)
+    if field is None or field.annotation is None:
+        raise Exception(f'meta info is missed for {field_name} of {model}')
+
+    for arg in field.metadata:
+        if isinstance(arg, StringConstraints):
+            return arg
+
+    raise Exception(f'meta info is missed for {field_name} of {model}')

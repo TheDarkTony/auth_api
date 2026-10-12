@@ -5,6 +5,8 @@ from sqlalchemy import create_engine, select, Engine, Integer, Boolean
 from sqlalchemy.orm import Session, DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.orm.util import identity_key
 
+from pydantic import BaseModel
+
 from core_contracts.metainfo import DataclassModel
 from core_contracts import issues
 
@@ -60,7 +62,6 @@ class SeanceManager:
 
         self.__scoped: bool = scoped
         self.__disposed: bool = False
-
         self.__seances: list[Session] = []
 
     def __del__(self):
@@ -189,7 +190,12 @@ class BaseRepo[TEntity: IntIdentifiableEntity, TModel: IntIdentifiableModel](Sch
             return self.add(model)
 
 
-    def _to_model_obj[M:DataclassModel](self, entry: IntIdentifiableEntity, model: Type[M]) -> M:
+    def _to_model_obj[M:DataclassModel|BaseModel](self, entry: IntIdentifiableEntity, model: Type[M]) -> M:
+
+        if issubclass(model, BaseModel):
+            obj = model.model_validate(entry, from_attributes=True)
+            return obj
+
         fields = model.__dataclass_fields__
         args = {
             prop: getattr(entry, prop)
@@ -202,6 +208,13 @@ class BaseRepo[TEntity: IntIdentifiableEntity, TModel: IntIdentifiableModel](Sch
 
 
     def _to_entity_obj[E:IntIdentifiableEntity](self, model:DataclassModel, entity: Type[E]) -> E:
+
+        if isinstance(model, BaseModel):
+            args = model.model_dump()
+            entry = entity(**args)
+            entry.id = getattr(model, 'id', 0)
+            return entry
+
         fields = model.__dataclass_fields__
         args = {
             f: getattr(model, f)
@@ -215,6 +228,13 @@ class BaseRepo[TEntity: IntIdentifiableEntity, TModel: IntIdentifiableModel](Sch
 
 
     def _model_obj_to_entry(self, obj: TModel, entry: TEntity):
+
+        if issubclass(self._data_cls, BaseModel):
+            for k, v in self._data_cls.model_fields.items():
+                if hasattr(entry, k):
+                    setattr(entry, k, getattr(obj, k))
+            return
+
         fields = self._data_cls.__dataclass_fields__
         for f in fields:
             if hasattr(entry, f):

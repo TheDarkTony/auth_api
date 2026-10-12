@@ -34,7 +34,7 @@ class TestSignUpEmailVerified:
     @pytest.fixture(scope='class')
     @classmethod
     def rqst_ctx(cls, code) -> DemandContext:
-        demand = Sign2FAFeedbackDemand(token_hex(16), code)
+        demand = Sign2FAFeedbackDemand(process_token=token_hex(16), code=code)
         return DemandContext(demand, None)
 
     @pytest.fixture(scope='class')
@@ -42,13 +42,13 @@ class TestSignUpEmailVerified:
     def identity_repo(cls, monkey):
         def fetch_identity_by_email(r, email) -> Identity|None:
             assert email is not None
-            return Identity(email, False, id=99, is_activated=False)
+            return Identity(email=email, email_verified=False, fname=None, lname=None, is_activated=False, id=99)
 
         def update_and_attach_user(r, identity: Identity, usr: UserSubject):
             assert identity.email_verified == True
             assert identity.is_activated == True
             assert usr.role_id > 0
-            return identity, User(identity.id, usr.role_id, usr.username, usr.pwd, usr.email_2fa_enabled, id=99)
+            return identity, User(identity_id=identity.id, role_id=usr.role_id, username=usr.username, pwd=usr.pwd, email_2fa_enabled=usr.email_2fa_enabled, id=99)
         
         monkey.setattr(FakeIdentityRepo, FakeIdentityRepo.fetch_by_email.__name__, fetch_identity_by_email)
         monkey.setattr(FakeIdentityRepo, FakeIdentityRepo.update_and_attach_user.__name__, update_and_attach_user)
@@ -73,7 +73,7 @@ class TestSignUpEmailVerified:
             expired_at = utcnow() + timedelta(minutes=1)
             pwd = bcrypt.hashpw('Test@123'.encode('utf-8'), bcrypt.gensalt())
             data = json.dumps({'code':code, 'email': 'ivanov@bk.ru', 'pwd': pwd.decode('utf-8')})
-            return TempToken(token, 1, expired_at, data)
+            return TempToken(token=token, type=1, expired_at=expired_at, json_data=data)
 
         monkey.setattr(FakeTempTokenRepo, 'fetch_by_token', fetch_by_token)
         return FakeTempTokenRepo
@@ -97,10 +97,10 @@ class TestSignUpEmailVerified:
 class TestSignUp2FABadRequest(BabRequestCase):
 
     @pytest.fixture(scope='class', params=[
-        Sign2FAFeedbackDemand('',''),
-        Sign2FAFeedbackDemand('qwerty1234',''),
-        Sign2FAFeedbackDemand('','12345'),
-        Sign2FAFeedbackDemand('qwerty1234','123456'),
+        {'process_token':'', 'code':''},
+        {'process_token':'qwerty1234', 'code':''},
+        {'process_token':'', 'code':'12345'},
+        {'process_token':'qwerty1234', 'code':'123456'},
     ],
     ids=[
         'process token and code are required',

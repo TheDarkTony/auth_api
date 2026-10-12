@@ -2,8 +2,6 @@ from core_contracts.base import IdentityArguments, PagginationArguments
 from core_contracts.handler import DemandContext, Response, PipelineProtocol, Handler
 from core_contracts.identity.models import IdentityFields, UserFields
 
-from core.identity.demands import EditDemographicsDemand, EditUserDemand, ChangePwdDemand
-
 
 class DemandHandlerWrapper:
     def __init__(self, pipeline: PipelineProtocol, handler: Handler) -> None:
@@ -53,11 +51,8 @@ class FetchIdentityWrapper(DemandHandlerWrapper):
 
 class EditIdentityDemographicsWrapper(DemandHandlerWrapper):
 
-    def edit_demographics(self, ctx: DemandContext,  identity_id:int, demand: EditDemographicsDemand) -> Response: 
-
+    def edit_demographics(self, ctx: DemandContext,  identity_id:int) -> Response: 
         ctx.arguments[IdentityArguments.IDENTITY_ID] = identity_id
-        ctx.demand = demand
-
         return self._pipeline.execute(ctx, self._handler)
 
 
@@ -106,15 +101,13 @@ class DeleteUserWrapper(DemandHandlerWrapper):
 
 class EditUserWrapper(DemandHandlerWrapper):
 
-    def edit_user(self, ctx: DemandContext, usr_id:int, demand: EditUserDemand) -> Response:
+    def edit_user(self, ctx: DemandContext, usr_id:int) -> Response:
         ctx.arguments[IdentityArguments.USER_ID] = usr_id
-        ctx.demand = demand
         return self._pipeline.execute(ctx, self._handler)
 
 
 class ChangePwdWrapper(DemandHandlerWrapper):
 
-    def change_pwd(self, ctx: DemandContext, usr_id: int, demand: ChangePwdDemand) -> Response:
+    def change_pwd(self, ctx: DemandContext, usr_id: int) -> Response:
         ctx.arguments[IdentityArguments.USER_ID] = usr_id
-        ctx.demand = demand
         return self._pipeline.execute(ctx, self._handler)

@@ -4,14 +4,11 @@ from sqlalchemy import String, DateTime, Integer, select
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core_contracts import issues
-from core_contracts.metainfo import metainfo_int
+from core_contracts.metainfo import get_metainfo
 from core_contracts.temp_token import models
 from core_contracts.temp_token.repositories import ITempTokenRepository
 
 from repo_sqlalchemy.schema import Base, TBL, Schema, IntPK, SeanceManager
-
-
-_max_length_key = models.FieldMetaData.max_length.value
 
 
 class TempToken(Base):
@@ -19,7 +16,7 @@ class TempToken(Base):
 
     id: Mapped[IntPK]
     token: Mapped[str] = mapped_column(
-        String(metainfo_int(models.TempToken, models.TempTokenFields.TOKEN, _max_length_key)),
+        String(get_metainfo(models.TempToken, models.TempTokenFields.TOKEN.value).max_length),
         index=True,
         unique=True
     )
@@ -44,7 +41,7 @@ class TempTokenRepository(Schema, ITempTokenRepository):
         if entry is None:
             return None
 
-        return models.TempToken(entry.token, entry.type, entry.expired_at, entry.json_data)
+        return models.TempToken.model_validate(entry, from_attributes=True)
         
 
     def add(self, token: models.TempToken) -> models.TempToken:

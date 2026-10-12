@@ -97,7 +97,7 @@ class IdentityRepository(BaseRepo[entities.Identity, models.Identity], IIdentity
         with seance.begin():
             entries = seance.execute(stmt).all()
 
-        return [models.IdentityItem(id, fname, lname) for id, fname, lname in entries]
+        return [models.IdentityItem(id=id, fname=fname, lname=lname) for id, fname, lname in entries]
 
 
     def update_and_attach_user(self, identity:models.Identity, user: models.UserSubject) -> tuple[models.Identity, models.User]:

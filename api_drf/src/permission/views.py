@@ -1,5 +1,3 @@
-from typing import cast
-
 from rest_framework.views import APIView
 from dependency_injector.wiring import Provide, Closing, inject
 
@@ -54,7 +52,6 @@ class ListPermissionsView(APIView):
     def get(self, request
         , offerrer: ListPermissionsWrapper = Closing[Provide[AppContainer.list_permissions_wrapper]]
     ):
-
         query = request.query_params
         role_id = query.get('role_id')
         resource_id = query.get('resource_id')
@@ -68,14 +65,13 @@ class ListPermissionsView(APIView):
         , offerrer: CreatePermissionWrapper = Closing[Provide[AppContainer.create_permission_wrapper]]
     ):
         query = request.query_params
-        role_id = query.get('role_id')
-        resource_id = query.get('resource_id')
+        request_serializer = NewPermissionSerializer(data=request.data)
+        request_serializer.is_valid()
+        request.demand_context.demand = request_serializer.validated_data
 
-        demand = cast(NewPermissionSerializer, NewPermissionSerializer(data=request.data)).demand
-
-        result = offerrer.create_permission(request.demand_context, role_id, resource_id, demand)
-        serializer = PermissionResultSerializer(result,context={'request': request, 'viewname': 'permission-detail'})
-        return Offer(serializer, result).offer
+        result = offerrer.create_permission(request.demand_context, query.get('role_id'), query.get('resource_id'))
+        response_serializer = PermissionResultSerializer(result,context={'request': request, 'viewname': 'permission-detail'})
+        return Offer(response_serializer, result).offer
 
     def get_serializer(self, *args, **kwargs):
         if self.request.method == 'POST':
@@ -106,11 +102,13 @@ class DetailPermissionView(APIView):
         role_id = query.get('role_id')
         resource_id = query.get('resource_id')
 
-        demand = cast(PermissionSubjectSerializer, PermissionSubjectSerializer(data=request.data)).demand
+        request_serializer = PermissionSubjectSerializer(data=request.data)
+        request_serializer.is_valid()
+        request.demand_context.demand = request_serializer.validated_data
 
-        result = offerrer.edit_permission(request.demand_context, role_id, resource_id, id, demand)
-        serializer = PermissionResultSerializer(result,context={'request': request, 'viewname': 'permission-detail'})
-        return Offer(serializer, result).offer
+        result = offerrer.edit_permission(request.demand_context, role_id, resource_id, id)
+        response_serializer = PermissionResultSerializer(result,context={'request': request, 'viewname': 'permission-detail'})
+        return Offer(response_serializer, result).offer
 
     @inject
     def delete(self, request

@@ -14,7 +14,9 @@ class MemoryMessageBus(IMessageOutBus, IMessageInBus):
             return None
 
         try:
-            return self._queue_bus.get(block=False)
+            item = self._queue_bus.get(block=False)
+            self._queue_bus.task_done()
+            return item
         except Empty:
             return None
 

@@ -1,13 +1,14 @@
-from dataclasses import dataclass, field
+from typing import Annotated
 from datetime import datetime
 from enum import IntEnum, StrEnum
 
-from core_contracts.metainfo import FieldMetaData, FieldLength
+from pydantic import BaseModel, StringConstraints
+
+from core_contracts.metainfo import FieldLength
 
 
-@dataclass
-class TempToken:
-    token: str = field(metadata={FieldMetaData.max_length.value:FieldLength.l_100.value})
+class TempToken(BaseModel):
+    token: Annotated[str, StringConstraints(max_length=FieldLength.l_100.value)]
     type: int|None
     expired_at: datetime
     json_data: str

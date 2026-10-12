@@ -1,5 +1,3 @@
-from typing import cast
-
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from dependency_injector.wiring import Provide, Closing, inject
@@ -72,8 +70,11 @@ class DetailIdentityView(APIView):
         , id
         , offerer: EditIdentityDemographicsWrapper = Closing[Provide[AppContainer.edit_demographics_wrapper]]
     ):
-        s = cast(IdentityDemographicsSerializer, IdentityDemographicsSerializer(data=request.data))
-        result = offerer.edit_demographics(request.demand_context, id, demand=s.demand)
+        request_serializer = IdentityDemographicsSerializer(data=request.data)
+        request_serializer.is_valid()
+        request.demand_context.demand = request_serializer.validated_data
+
+        result = offerer.edit_demographics(request.demand_context, id)
         return Offer(IdentityResultSerializer(result, context={'request': request, 'viewname':'identity-details'}), result).offer
 
     def get_serializer(self, *args, **kwargs):
@@ -100,9 +101,11 @@ class DetailProfileView(APIView):
 
     @inject
     def put(self, request, offerer: ChangePwdWrapper = Closing[Provide[AppContainer.change_user_pwd]]):
-        demand = cast(ChangeUserPwdSerializer, ChangeUserPwdSerializer(data=request.data)).demand
-        id = request.claims.user_id
-        result = offerer.change_pwd(request.demand_context, id, demand)
+        request_serializer = ChangeUserPwdSerializer(data=request.data)
+        request_serializer.is_valid()
+        request.demand_context.demand = request_serializer.validated_data
+
+        result = offerer.change_pwd(request.demand_context, request.claims.user_id)
         return Offer(ResultSerializer(result, context={'request': request, 'viewname': None}), result).offer
 
     def get_serializer(self, *args, **kwargs):
@@ -150,8 +153,12 @@ class DetailUserView(APIView):
         , id
         , offerer: EditUserWrapper = Closing[Provide[AppContainer.edit_user_wrapper]]
     ):
-        demand = cast(EditUserSerializer, EditUserSerializer(data=request.data)).demand
-        result = offerer.edit_user(request.demand_context, id, demand)
+        request_serializer = EditUserSerializer(data=request.data)
+        request_serializer.is_valid()
+        request.demand_context.demand = request_serializer.validated_data
+        
+        result = offerer.edit_user(request.demand_context, id)
+
         return Offer(UserResultSerializer(result, context={
             'request': request, 
             'viewname': 'user-details'
@@ -178,6 +185,9 @@ class DetailUserView(APIView):
 @api_view(['PUT'])
 @inject
 def change_user_pwd(request, id, offerer: ChangePwdWrapper = Closing[Provide[AppContainer.change_user_pwd]]):
-    demand = cast(ChangeUserPwdSerializer, ChangeUserPwdSerializer(data=request.data)).demand
-    result = offerer.change_pwd(request.demand_context, id, demand)
+    request_serializer = ChangeUserPwdSerializer(data=request.data)
+    request_serializer.is_valid()
+    request.demand_context.demand = request_serializer.validated_data
+    
+    result = offerer.change_pwd(request.demand_context, id)
     return Offer(ResultSerializer(result, context={'request': request, 'viewname': None}), result).offer
