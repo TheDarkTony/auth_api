@@ -33,6 +33,14 @@ class EditUserDemand(BaseModel):
     email_2fa_enabled: bool
 
 
+def _verify_missed(value, info: ValidationInfo):
+    if not isinstance(value, str):
+        raise ValueError(f'Wrong type of {info.field_name} is provided')
+
+    if value is None or len(value) == 0:
+        raise ValueError(f'{info.field_name} is required')
+
+
 class SignInDemand(BaseModel):
     email: Annotated[str, StringConstraints(max_length=FieldLength.l_75)]
     pwd: str
@@ -40,11 +48,7 @@ class SignInDemand(BaseModel):
     @field_validator('email', mode='before')
     @classmethod
     def validate_email(cls, value: str, info: ValidationInfo) -> str:
-        if not isinstance(value, str):
-            raise ValueError('Wrong email type is provided')
-
-        if value is None or len(value) == 0:
-            raise ValueError('Email is required')
+        _verify_missed(value, info)
 
         if isinstance(info.context, dict):
             email_regex = info.context.get('email_regex')
@@ -58,11 +62,7 @@ class SignInDemand(BaseModel):
     @field_validator('pwd', mode='before')
     @classmethod
     def validate_pwd(cls, value: str, info: ValidationInfo) -> str:
-        if not isinstance(value, str):
-            raise ValueError('Wrong email type is provided')
-
-        if value is None or len(value) == 0:
-            raise ValueError('Email is required')
+        _verify_missed(value, info)
         return value
 
 

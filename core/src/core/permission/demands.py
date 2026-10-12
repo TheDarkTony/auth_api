@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, ValidationInfo
 from core_contracts.base import AccessMode
 
 
@@ -18,39 +18,11 @@ class PermissionDemand(BaseModel):
             raise ValueError('mode value is invalid')
         return value
 
-    @field_validator('allow_enumerate', mode='before')
+    @field_validator('allow_enumerate', 'allow_read', 'allow_create', 'allow_edit', 'allow_delete',  mode='before')
     @classmethod
-    def validate_allow_enumerate(cls, value):
+    def validate_allow_enumerate(cls, value, info: ValidationInfo):
         if value is None:
-            raise ValueError('allow_enumerate is required')
-        return value
-
-    @field_validator('allow_read', mode='before')
-    @classmethod
-    def validate_allow_read(cls, value):
-        if value is None:
-            raise ValueError('allow_read is required')
-        return value
-
-    @field_validator('allow_create', mode='before')
-    @classmethod
-    def validate_allow_create(cls, value):
-        if value is None:
-            raise ValueError('allow_create is required')
-        return value
-
-    @field_validator('allow_edit', mode='before')
-    @classmethod
-    def validate_allow_edit(cls, value):
-        if value is None:
-            raise ValueError('allow_edit is required')
-        return value
-
-    @field_validator('allow_delete', mode='before')
-    @classmethod
-    def validate_allow_delete(cls, value):
-        if value is None:
-            raise ValueError('allow_delete is required')
+            raise ValueError(f'{info.field_name} is required')
         return value
 
 
