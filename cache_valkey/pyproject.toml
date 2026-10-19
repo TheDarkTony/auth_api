@@ -1,0 +1,22 @@
+[project]
+name = "cache-valkey"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Tony",email = "ant_9393@bk.ru"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "valkey (==6.1.1)",
+    "core-contracts (==0.1.0)"
+]
+
+[tool.poetry]
+packages = [{include = "cache_valkey", from = "src"}]
+
+[tool.poetry.dependencies]
+core-contracts = { path = "../core_contracts", develop = true}
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
