@@ -6,7 +6,7 @@ from secrets import token_hex
 import pytest
 
 from core.handler import Pipeline, Response, DemandContext
-from core.auth.signup import pipeline_signup_2fa, SignUp2FAVerificationHandler, Sign2FAFeedbackDemand
+from core.auth.signup_commands import pipeline_signup_2fa, SignUp2FAVerificationHandler, Sign2FAFeedbackDemand
 from core_contracts.identity.models import Identity, UserSubject, User
 from core_contracts.temp_token.models import TempToken
 from core_contracts.base import utcnow

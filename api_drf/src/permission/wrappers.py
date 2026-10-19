@@ -1,6 +1,6 @@
 from core_contracts.handler import DemandContext, Response, PipelineProtocol, Handler
 
-from core.permission.permissions import Arguments
+from core.permission.commands import Arguments
 
 
 class DemandHandlerWrapper:

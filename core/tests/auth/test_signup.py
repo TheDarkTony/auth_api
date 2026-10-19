@@ -3,7 +3,7 @@ import pytest
 from core_contracts.identity.repositories import IIdentityRepository
 from core_contracts.identity.models import Identity, User
 from core_contracts.queue.emailer_2fa import Email2FAVerificationMessage, Emailer2FAQueuePublisher
-from core.auth.signup import SignUpHandler, pipeline_signup
+from core.auth.signup_commands import SignUpHandler, pipeline_signup
 from core.handler import Pipeline, DemandContext, MessageType, Response
 
 from tests.conftest import FakeIdentityRepo, MockEmail2FaVerificationQueue, FakeUserRepo

@@ -11,7 +11,7 @@ from core_contracts.identity import models as iden_model
 
 from core import utils
 from core.auth.utils import Sign2FAFeedbackDemand, verify_2fa_feedback_demand_filter, AuthTokenUtil
-from core.auth.signup import Settings
+from core.auth.signup_commands import Settings
 from core.identity.demands import SignInDemand
 from core.identity.demands import DemandAccepted
 from core.handler import Handler, DemandContext, Response, Pipeline, MessageType, get_default_pipeline
