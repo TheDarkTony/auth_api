@@ -26,7 +26,7 @@ class Arguments(StrEnum):
 
 class ListApplicationResourcesAuthorizationFilter(ListAuthorizationFilter):
     @property
-    def resource(self) -> str:
+    def resource(self) -> int:
         return Resources.APPLICATION_RESOURCES
 
 
@@ -48,8 +48,8 @@ def list_app_resources_pipeline(perm_repo: IRolePermissionRepository) -> Pipelin
 
 class ListRolesAuthorizationHandler(ListAuthorizationFilter):
     @property
-    def resource(self) -> str:
-        return Resources.ROLES
+    def resource(self) -> int:
+        return Resources.ROLES.value
 
 
 class ListRolesHandler(Handler):
@@ -85,8 +85,8 @@ def validate_list_arguments_filter(ctx: DemandContext, next: Callable[[], Respon
 class ListPermissionsAuthorizationFilter(ListAuthorizationFilter):
 
     @property
-    def resource(self) -> str:
-        return Resources.ROLE_PERMISSIONS
+    def resource(self) -> int:
+        return Resources.ROLE_PERMISSIONS.value
 
 
 class ListPermissionsHandler(Handler):
@@ -134,8 +134,8 @@ class _PermissionAuthorizationFilter:
         self._perm_repo: IRolePermissionRepository = perm_repo
 
     @property
-    def resource(self) -> str:
-        return Resources.ROLE_PERMISSIONS
+    def resource(self) -> int:
+        return Resources.ROLE_PERMISSIONS.value
 
     def authorize_operation(self, ctx: DemandContext, next: Callable[[], Response]) -> Response:
 
@@ -143,11 +143,11 @@ class _PermissionAuthorizationFilter:
         if usr_claims is None:
             raise ForbiddenIssue('Please authorize.')
 
-        perms = self._perm_repo.list_by_resource_name(usr_claims.role_id, self.resource)
+        perms = self._perm_repo.list_by_id(usr_claims.role_id, self.resource)
         if len(perms) == 0:
             raise ForbiddenIssue('Please authorize.')
 
-        perm, w = perms[0]
+        perm = perms[0]
         if perm.mode is not None:
             raise ForbiddenIssue(f'You do not have access to {self.resource}')
 
@@ -209,7 +209,7 @@ class EditPermissionHandler(Handler):
         permission.allow_edit = demand.allow_edit
         permission.allow_delete = demand.allow_delete
 
-        self._perm_repo.save(permission)
+        self._perm_repo.save(permission, context={'role_id':role_id, 'resource_id':resource_id})
 
         return Response(200, data=permission)
 
@@ -267,7 +267,7 @@ class CreatePermissionHandler(Handler):
             raise ValidationIssue('State mismatch is detected. Please correct your request')
 
         perm = RolePermission.model_validate(demand, from_attributes=True)
-        perm = self._perm_repo.save(perm)
+        perm = self._perm_repo.save(perm, context={'role_id':role_id, 'resource_id':resource_id})
         resp = Permission.model_validate(perm, from_attributes=True)
         return Response(200, data=resp)
 

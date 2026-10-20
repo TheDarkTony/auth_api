@@ -42,6 +42,11 @@ class ApiCoreConfig(AppConfig):
         ])
 
         security = settings.SECURITY_AUTH
+        queue = settings.RABBITMQ
+        repo = settings.REPO
+        if not (security or queue or repo):
+            raise Exception('Missed configuration section')
+        
         secret_jwt_key = security.get('SECRET_JWT_KEY')
         jwt_algorithm = security.get('JWT_ALGORITHM')
         access_token_seconds_ttl = security.get('ACCESS_TOKEN_SECONDS_TTL', -1)
@@ -67,7 +72,8 @@ class ApiCoreConfig(AppConfig):
         if valkey_url is None:
             raise Exception('Missed configuration: VALKEY_URL')
 
-        queue = settings.RABBITMQ
+        
+
         queue_url = queue.get('URL')
         queue_host = queue.get('HOST')
         queue_username = queue.get('USERNAME')
@@ -84,6 +90,9 @@ class ApiCoreConfig(AppConfig):
         if pizza_db_logging_exchange is None:
             raise Exception('Missed configuration: RABBITMQ.EXCHANGES.LOGGING ')
 
+        
+        perm_repo_datatype = repo.get('PERMISSIONS', {}).get('TYPE', 'database')
+        
         container.config.from_dict({
             'db': {
                 'connection': db_env1_conn
@@ -111,7 +120,11 @@ class ApiCoreConfig(AppConfig):
                 'jwt_algorithm': jwt_algorithm,
                 'access_token_seconds_ttl': access_token_seconds_ttl,
                 'refresh_token_seconds_ttl': refresh_token_seconds_ttl,
+            },
+            'repo': {
+                'permissions': { 'type': perm_repo_datatype }
             }
+
         })
 
         container.override_providers(message_bus=MESSAGE_BUS)

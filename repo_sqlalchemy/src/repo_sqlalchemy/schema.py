@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Iterable, Type, Annotated, Protocol
+from typing import Iterable, Type, Annotated, Protocol, Any
 
 from sqlalchemy import create_engine, select, Engine, Integer, Boolean
 from sqlalchemy.orm import Session, DeclarativeBase, Mapped, mapped_column
@@ -136,7 +136,7 @@ class BaseRepo[TEntity: IntIdentifiableEntity, TModel: IntIdentifiableModel](Sch
         return self._to_model_obj(entry, self._data_cls)
 
 
-    def delete(self, id: int) -> None:
+    def delete(self, id: int, context: dict[str, Any]|None=None) -> TModel|None:
 
         seance = self._seance()
         entry: TEntity|None = seance.identity_map.get(identity_key(class_=self._entity, ident=(id,)))
@@ -149,7 +149,12 @@ class BaseRepo[TEntity: IntIdentifiableEntity, TModel: IntIdentifiableModel](Sch
             if entry is None:
                 raise issues.NotFoundEntryIssue(f'{self._entity.__name__} entry is not located')
 
-            seance.delete(entry)        
+            seance.delete(entry)
+
+        if entry is None:
+            return None
+
+        return self._to_model_obj(entry, self._data_cls)
 
 
     def add(self, model: TModel) -> TModel:
@@ -181,7 +186,7 @@ class BaseRepo[TEntity: IntIdentifiableEntity, TModel: IntIdentifiableModel](Sch
         return self._to_model_obj(entry, self._data_cls)
 
 
-    def save(self, model: TModel) -> TModel:
+    def save(self, model: TModel, context: dict[str, Any]|None=None) -> TModel:
 
         edit_mode = hasattr(model, 'id') and model.id > 0
         if edit_mode:

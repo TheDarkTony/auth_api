@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Sequence
+from typing import Sequence, Any
 from dataclasses import dataclass
 from enum import StrEnum, IntEnum
 from datetime import datetime, timezone
@@ -13,12 +13,12 @@ class IRepository[TMobel](metaclass=ABCMeta):
 
 
     @abstractmethod
-    def save(self, model: TMobel,/) -> TMobel:
+    def save(self, model: TMobel, context: dict[str, Any]|None=None) -> TMobel:
         raise NotImplementedError
 
 
     @abstractmethod
-    def delete(self, id: int,/) -> None:
+    def delete(self, id: int, context: dict[str, Any]|None=None) -> TMobel | None:
         raise NotImplementedError
 
 
@@ -63,11 +63,11 @@ class Roles(IntEnum):
     customer = 4
 
 
-class Resources(StrEnum):
-    IDENTITIES = 'identities'
-    USERS = 'users'
-    ROLE_PERMISSIONS = 'roles_permissions'
-    ROLES = 'roles'
-    APPLICATION_RESOURCES = 'application_resources'
-    MENU = 'menu'
-    ORDERS = 'orders'
+class Resources(IntEnum):
+    ROLE_PERMISSIONS = 1
+    IDENTITIES = 2
+    USERS = 3
+    MENU = 4
+    ORDERS = 5
+    ROLES = 6
+    APPLICATION_RESOURCES = 7

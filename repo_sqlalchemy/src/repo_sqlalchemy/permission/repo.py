@@ -88,28 +88,6 @@ class RolePermissionRepository(BaseRepo[entities.RolesPermissions, models.RolePe
         return [(self._to_model_obj(p, models.RolePermission), w) for p, w in items]
 
 
-    def fetch_lightest_by_name(self, role_id: int, resource_name: str, mode: AccessMode) -> models.RolePermission:
-
-        entries = self._list_permissions_core(role_id, resource_name)
-        if len(entries) == 0:
-            return models.RolePermission(None, None, None, False, False, False, False, False)
-
-        entry: entities.RolesPermissions | None = None
-        for item, w in entries:
-            if item.mode is None:
-                entry = item
-                break
-
-            if item.mode == mode.value:
-                entry = item
-                break;
-
-        if entry is None:
-            return models.RolePermission(None, None, None, False, False, False, False, False)
-        
-        return self._to_model_obj(entry, self._data_cls)
-
-
     def _list_permissions_core(self, role_id: int, resource_name: str, /) -> Sequence[tuple[entities.RolesPermissions, int]]:
         
         entries: list[tuple[entities.RolesPermissions, int]] = []
@@ -140,3 +118,15 @@ class RolePermissionRepository(BaseRepo[entities.RolesPermissions, models.RolePe
                 entries.append((perm, weight))
 
         return entries
+
+    @staticmethod
+    def _default_deny_permission() -> models.RolePermission:
+        return models.RolePermission(
+            role_id=None,
+            resource_id=None,
+            mode=None,
+            allow_enumerate=False,
+            allow_read=False,
+            allow_create=False,
+            allow_edit=False,
+            allow_delete=False)

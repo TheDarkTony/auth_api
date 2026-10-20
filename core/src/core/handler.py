@@ -2,10 +2,12 @@ from abc import abstractmethod, ABCMeta
 from typing import Callable, Any
 import logging
 
-from core_contracts.base import IdentityArguments, AccessMode, AccessArguments
+from core_contracts.base import IdentityArguments, AccessMode, AccessArguments, Resources
 from core_contracts.issues import ValidationIssue, ForbiddenIssue, ApplicationIssue, NotFoundEntryIssue
 from core_contracts.handler import MessageType, Response, DemandContext, Claims, FilterCallable, Handler
 from core_contracts.permission.repositories import IRolePermissionRepository, RolePermission
+
+from core.permission.utils import fetch_lightest_permission
 
 
 class Pipeline:
@@ -91,14 +93,16 @@ class SingleItemAuthorizationFilter(metaclass=ABCMeta):
             raise ForbiddenIssue('Please authorize.')
 
         mode = self._get_mode_core(usr_claims, ctx)
-        perm = self._perm_repo.fetch_lightest_by_name(usr_claims.role_id, self.resource, mode)
+
+        perms = self._perm_repo.list_by_id(usr_claims.role_id, int(self.resource))
+        perm = fetch_lightest_permission(perms, mode)
 
         self.authorize_core(perm)
         return next()
 
     @property
     @abstractmethod
-    def resource(self) -> str:
+    def resource(self) -> int:
         raise NotImplementedError
 
     @abstractmethod
@@ -125,11 +129,11 @@ class ListAuthorizationFilter(metaclass=ABCMeta):
         predicate[AccessArguments.CURRENT_IDENTITY] = claims.identity_id
         predicate[AccessArguments.CURRENT_USR] = claims.user_id
 
-        permissions = self._perm_repo.list_by_resource_name(claims.role_id, self.resource)
+        permissions = self._perm_repo.list_by_id(claims.role_id, self.resource)
 
         allow_own: bool|None = None
         allow_nonown: bool|None = None
-        for p, w in permissions:
+        for p in permissions:
             if p.mode is None:
                 if allow_own is None:
                     allow_own = p.allow_enumerate
@@ -141,7 +145,7 @@ class ListAuthorizationFilter(metaclass=ABCMeta):
                 allow_nonown = p.allow_enumerate
 
             if allow_own is not None and allow_nonown is not None:
-                break;
+                break
 
         if allow_own is None and allow_nonown is None:
             raise ForbiddenIssue(f'You do not have access to list {self.resource}')
@@ -159,5 +163,5 @@ class ListAuthorizationFilter(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def resource(self) -> str:
+    def resource(self) -> int:
         raise NotImplementedError

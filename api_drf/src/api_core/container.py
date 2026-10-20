@@ -10,10 +10,12 @@ from src.auth import wrappers as auth_wrappers
 from core.identity import identities_commands
 from core.identity import profile_commands
 from core.identity import users_commands
-from src.identity import wrappers as identity_wrappers
-
 from core.permission import commands
+from core.pizza import orders
+
+from src.identity import wrappers as identity_wrappers
 from src.permission import wrappers as perm_wrappers
+from src.pizza import wrappers as pizza_wrappers
 
 from repo_sqlalchemy import schema
 from repo_sqlalchemy.identity import repo as ir
@@ -23,8 +25,7 @@ from repo_sqlalchemy.temp_token import repo as tr
 from queue_publishers import emailer_2fa
 from queue_publishers.message_bus import MemoryMessageBus
 
-from core.pizza import orders
-from src.pizza import wrappers as pizza_wrappers
+from cache_valkey.permissions import repositories as perms_cache_repo
 
 from src.api_core.utils import UserTempBlackListValkey, AccessTokenBlackListValkey
 
@@ -53,6 +54,7 @@ class AppContainer(containers.DeclarativeContainer):
         , db_engine
     )
 
+    #DATABASE REPO
     identities_repo = providers.Factory(
         ir.IdentityRepository
         , db_seance_manager
@@ -63,7 +65,7 @@ class AppContainer(containers.DeclarativeContainer):
         , db_seance_manager
     )
 
-    permissions_repo = providers.Factory(
+    permissions_db_repo = providers.Factory(
         pr.RolePermissionRepository
         , db_seance_manager
     )
@@ -83,11 +85,11 @@ class AppContainer(containers.DeclarativeContainer):
         , db_seance_manager
     )
 
+    #CACHE REPO
     valkey_client = providers.ThreadSafeSingleton(
         valkey.from_url,
         url=config.valkey.url
     )
-
     user_temp_black_list_repo = providers.Factory(
         UserTempBlackListValkey,
         valkey_client
@@ -95,6 +97,18 @@ class AppContainer(containers.DeclarativeContainer):
     access_token_black_list_repo = providers.Factory(
         AccessTokenBlackListValkey,
         valkey_client
+    )
+    permissions_cache_repo = providers.Factory(
+        perms_cache_repo.RolePermissionCacheRepository
+        , permissions_db_repo
+        , valkey_client
+    )
+
+    #REPO
+    permissions_repo = providers.Selector(
+        config.repo.permissions.type,
+        database=permissions_db_repo,
+        cache=permissions_cache_repo
     )
 
     ####queue deps
