@@ -98,10 +98,16 @@ class AppContainer(containers.DeclarativeContainer):
         AccessTokenBlackListValkey,
         valkey_client
     )
+
+    cache_settings = providers.Singleton(
+        perms_cache_repo.CacheSettings
+        ,ttl_seconds=config.repo.permissions.cache_seconds_ttl
+    )
     permissions_cache_repo = providers.Factory(
         perms_cache_repo.RolePermissionCacheRepository
         , permissions_db_repo
         , valkey_client
+        , cache_settings
     )
 
     #REPO

@@ -1,17 +1,27 @@
+from dataclasses import dataclass
 from typing import Sequence, cast, Any
 
 import valkey
 
+from core_contracts.issues import ConfigurationIssue
 from core_contracts.permission.models import Permission, RolePermission
 from core_contracts.permission.repositories import IRolePermissionRepository
 
 
-class RolePermissionCacheRepository(IRolePermissionRepository):
-    TTL = 300 #seconds
+@dataclass
+class CacheSettings:
+    ttl_seconds: int
 
-    def __init__(self, repo: IRolePermissionRepository, valkey_client: valkey.Valkey) -> None:
+
+class RolePermissionCacheRepository(IRolePermissionRepository):
+
+    def __init__(self, repo: IRolePermissionRepository, valkey_client: valkey.Valkey, settings: CacheSettings) -> None:
+        if settings is None or settings.ttl_seconds is None:
+            raise ConfigurationIssue('Missed configuration: ttl_seconds of cache permissions repo')
+        self._settings: CacheSettings = settings
         self._repo: IRolePermissionRepository = repo
         self._valkey: valkey.Valkey = valkey_client
+        self._decoded_response = self._valkey.connection_pool.connection_kwargs.get('decode_responses', False)
 
     #can be removed from interface
     def list_by_resource_name(self, role_id: int, resource_name: str) -> Sequence[tuple[RolePermission, int]]:
@@ -56,22 +66,30 @@ class RolePermissionCacheRepository(IRolePermissionRepository):
         ids = cast(set, self._valkey.smembers(key))
         entries = []
         for _id in ids:
-            entry = cast(dict, self._valkey.hgetall(self._CACHE_ENTRY_KEY_(int(_id.decode('utf-8')))))
+            _id = int(_id) if self._decoded_response else int(_id.decode('utf-8'))
+            entry = cast(dict, self._valkey.hgetall(self._CACHE_ENTRY_KEY_(_id)))
             if len(entry) > 0:
                 entries.append(self._entry(entry))
         return sorted(entries, key= lambda e: e.weight)
 
     def _include_to_cache_set(self, key: str, perms: Sequence[RolePermission]) -> None:
+        if len(perms) == 0:
+            return
         self._valkey.sadd(key, *[p.id for p in perms])
-        self._valkey.expire(key, self.TTL)
+        self._valkey.expire(key, self._settings.ttl_seconds)
 
     def _exclude_from_cache_set(self, key: str, perms: Sequence[RolePermission]) -> None:
         self._valkey.srem(key, *[p.id for p in perms])
-        self._valkey.expire(key, self.TTL)
+        self._valkey.expire(key, self._settings.ttl_seconds)
 
     def _cache_item(self, key: str, perms: RolePermission) -> None:
         self._valkey.hset(key, mapping=perms.model_dump(exclude_none=True, exclude={'weight', 'name'}))
-        self._valkey.expire(key, self.TTL)
+        self._valkey.expire(key, self._settings.ttl_seconds)
+
+    def _entry(self, cached_item:dict)-> Permission:
+        if self._decoded_response:
+            return Permission.model_validate(cached_item)
+        return Permission.model_validate({k.decode('utf-8'):v.decode('utf-8') for k, v in cached_item.items()})
 
     @staticmethod
     def _validate_ctx(ctx:dict[str, Any]|None) -> tuple[int, int]:
@@ -84,10 +102,6 @@ class RolePermissionCacheRepository(IRolePermissionRepository):
         if resource_id is None:
             raise Exception('Missed context resource_id argument for cache repo')
         return role_id, resource_id
-
-    @staticmethod
-    def _entry(cached_item)-> Permission:
-        return Permission.model_validate({k.decode('utf-8'):v.decode('utf-8') for k, v in cached_item.items()})
 
     @staticmethod
     def _CACHE_ENTRY_KEY_(id) -> str:

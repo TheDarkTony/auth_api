@@ -72,7 +72,6 @@ class ApiCoreConfig(AppConfig):
         if valkey_url is None:
             raise Exception('Missed configuration: VALKEY_URL')
 
-        
 
         queue_url = queue.get('URL')
         queue_host = queue.get('HOST')
@@ -92,6 +91,7 @@ class ApiCoreConfig(AppConfig):
 
         
         perm_repo_datatype = repo.get('PERMISSIONS', {}).get('TYPE', 'database')
+        perm_repo_cache_ttl = repo.get('PERMISSIONS',{}).get('CACHE_SECONDS_TTL', 300)
         
         container.config.from_dict({
             'db': {
@@ -122,7 +122,7 @@ class ApiCoreConfig(AppConfig):
                 'refresh_token_seconds_ttl': refresh_token_seconds_ttl,
             },
             'repo': {
-                'permissions': { 'type': perm_repo_datatype }
+                'permissions': { 'type': perm_repo_datatype, 'cache_seconds_ttl': perm_repo_cache_ttl }
             }
 
         })
