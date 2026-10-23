@@ -1,12 +1,16 @@
-[build-system]
-requires = ["setuptools>=82.0"]
-build-backend = "setuptools.build_meta"
-
-
 [project]
-name = "core_contracts"
+name = "core-contracts"
 version = "0.1.0"
-description = 'package contains defenitions of model and interfaces. inheritance from which core of aplication can be extended by using various libraries for data access.'
-dependencies = [
-    'pydantic == 2.13.5',
+description = "package contains defenitions of model and interfaces. inheritance from which core of aplication can be extended by using various libraries for data access."
+authors = [
+    {name = "Tony",email = "ant_9393@bk.ru"}
 ]
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic (>=2.13.5,<3.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
