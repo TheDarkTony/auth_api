@@ -26,8 +26,9 @@ from queue_publishers import emailer_2fa
 from queue_publishers.message_bus import MemoryMessageBus
 
 from cache_valkey.permissions import repositories as perms_cache_repo
+from cache_valkey.identities import auth_black_list_repo as black_list_repo
 
-from src.api_core.utils import UserTempBlackListValkey, AccessTokenBlackListValkey
+#from src.api_core.utils import UserTempBlackListValkey, AccessTokenBlackListValkey
 
 
 @contextmanager
@@ -91,11 +92,11 @@ class AppContainer(containers.DeclarativeContainer):
         url=config.valkey.url
     )
     user_temp_black_list_repo = providers.Factory(
-        UserTempBlackListValkey,
+        black_list_repo.UserTempBlackListRepo,
         valkey_client
     )
     access_token_black_list_repo = providers.Factory(
-        AccessTokenBlackListValkey,
+        black_list_repo.AccessTokenBlackListRepo,
         valkey_client
     )
 

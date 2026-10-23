@@ -11,8 +11,9 @@ from dependency_injector.wiring import Provide, inject
 
 from core.auth.utils import AuthTokenUtil
 from core_contracts.handler import MessageType, DemandContext, TRACE_ID
+from cache_valkey.identities.auth_black_list_repo import AccessTokenBlackListRepo, UserTempBlackListRepo
 
-from src.api_core.utils import AccessTokenBlackListValkey, UserTempBlackListValkey, get_auth_token
+from src.api_core.utils import get_auth_token
 from src.api_core.container import AppContainer
 
 
@@ -47,8 +48,8 @@ class AuthorizationMiddleware:
 
     @inject
     def __call__(self, request
-        , token_blk_list: AccessTokenBlackListValkey = Provide[AppContainer.access_token_black_list_repo]
-        , usr_temp_blk_list: UserTempBlackListValkey = Provide[AppContainer.user_temp_black_list_repo]
+        , token_blk_list: AccessTokenBlackListRepo = Provide[AppContainer.access_token_black_list_repo]
+        , usr_temp_blk_list: UserTempBlackListRepo = Provide[AppContainer.user_temp_black_list_repo]
     ):
 
         allow_anonymous = False

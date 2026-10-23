@@ -22,9 +22,10 @@ sys.path.insert(0, str(BASE_DIR / 'src'))
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-VALKEY_URL = "valkey://localhost:6379"
+VALKEY_URL = "valkey://localhost:6379?decode_responses=True"
 
 RABBITMQ = {
+    'URL': 'amqp://guest:guest@localhost:5672/%2F?connection_attempts=3&heartbeat=60',
     'HOST': 'localhost',
     'USERNAME': 'guest',
     'PASSWORD': 'guest',
@@ -53,6 +54,12 @@ SECURITY_AUTH_2FA = {
     'DEFAULT_EMAIL_2FA_ENABLED': True,
     'EMAIL_CODE_SECONDS_TTL': 300,
     'EMAIL_REGEX_TEMPLATE': '[^@]+@[^@]+', #[^@]+@[^@]+\.[^@]+
+}
+
+
+# TYPE: database, cache
+REPO = {
+    'PERMISSIONS': {'TYPE': 'database', 'CACHE_SECONDS_TTL': 600}
 }
 
 SIGNUP_DEFAULT_ROLE_ID = 4
