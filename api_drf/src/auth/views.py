@@ -9,12 +9,13 @@ from dependency_injector.wiring import Provide, Closing, inject
 
 from core_contracts.base import utcnow
 from core_contracts.handler import MessageType, Claims, Response as AppResponse
-from src.auth.wrappers import SignUpWrapper, SignUp2FAWrapper, SignInWrapper, SignIn2FAWrapper
+from cache_valkey.identities.auth_black_list_repo import AccessTokenBlackListRepo
 
+from src.auth.wrappers import SignUpWrapper, SignUp2FAWrapper, SignInWrapper, SignIn2FAWrapper
 from src.api_core.response import Offer
 from src.api_core.decorators import attach_serializer, allow_anonymous
-from src.api_core.utils import get_auth_token, AccessTokenBlackListValkey
 from src.api_core.container import AppContainer
+from src.api_core.utils import get_auth_token
 
 from .serializers import (
     SignUpSerializer,
@@ -36,7 +37,7 @@ def _dummy_browsable_api(msg):
 
 @api_view(['POST', 'GET'])
 @inject
-def signout(request, token_blk_list: AccessTokenBlackListValkey = Provide[AppContainer.access_token_black_list_repo]):
+def signout(request, token_blk_list: AccessTokenBlackListRepo = Provide[AppContainer.access_token_black_list_repo]):
     if request.method == 'GET':
         return _dummy_browsable_api('Dummy brawsable page')
 
