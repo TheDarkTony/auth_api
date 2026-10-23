@@ -70,6 +70,7 @@
 >>> pip install -e ./core_contracts
 >>> pip install -e ./core
 >>> pip install -e ./repo_sqlalchemy
+>>> pip install -e ./cache_valkey
 >>> pip install -e ./queue_publishers
 >>> pip install -e ./queue_workers
 ```

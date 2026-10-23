@@ -1,7 +1,7 @@
 import pytest
 
 from core.handler import Pipeline
-from core.auth.signup import Settings
+from core.auth.signup_commands import Settings
 from core.auth.utils import AuthTokenUtil
 
 from tests.conftest import BabRequestCase as BaseBabRequestCase

@@ -22,10 +22,6 @@ class IApplicationResourceRepository(IRepository[ApplicationResource]):
 class IRolePermissionRepository(IRepository[RolePermission]):
 
     @abstractmethod
-    def fetch_lightest_by_name(self, role_id: int, resource_name: str, mode: AccessMode) -> RolePermission:
-        raise NotImplementedError
-
-    @abstractmethod
     def list_by_id(self, role_id: int, resource_id: int, /) -> Sequence[Permission]:
         raise NotImplementedError
 

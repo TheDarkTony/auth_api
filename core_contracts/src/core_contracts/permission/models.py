@@ -1,7 +1,7 @@
 from typing import Annotated, Any
 from enum import StrEnum
 
-from pydantic import BaseModel, StringConstraints
+from pydantic import BaseModel, StringConstraints, model_serializer
 
 from core_contracts.metainfo import FieldLength
 
@@ -37,15 +37,24 @@ class ApplicationResourceFields(StrEnum):
 
 
 class PermissionSubject(BaseModel):
-    role_id: int | None
-    resource_id: int | None
+    role_id: int | None = None
+    resource_id: int | None = None
 
-    mode: str | None
+    mode: str | None = None
     allow_enumerate: bool
     allow_read: bool
     allow_create: bool
     allow_edit: bool
     allow_delete: bool
+
+
+    @model_serializer(mode='wrap')
+    def serialize_bool_to_int(self, handler) -> dict[str, Any]:
+        result: dict[str, Any] = handler(self)
+        for k, v in result.items():
+            if isinstance(v, bool):
+                result[k] = 1 if v else 0
+        return result
 
 
 class RolePermission(PermissionSubject):

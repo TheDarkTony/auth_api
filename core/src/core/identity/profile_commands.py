@@ -8,6 +8,7 @@ from core_contracts.base import AccessMode, Resources
 from core_contracts.identity.models import ProfileResponse, Identity, User
 
 from core.handler import Handler, Response, Pipeline, DemandContext, get_default_pipeline
+from core.permission.utils import fetch_lightest_permission
 
 
 class ProfileArguments(StrEnum):
@@ -27,8 +28,12 @@ class FetchProfileAuthorizationFilter:
             raise ForbiddenIssue('Please authorize.')
 
         mode = AccessMode.own
-        identity_perm = self._perm_repo.fetch_lightest_by_name(usr_claims.role_id, Resources.IDENTITIES, mode)
-        user_perm = self._perm_repo.fetch_lightest_by_name(usr_claims.role_id, Resources.USERS, mode)
+
+        perms = self._perm_repo.list_by_id(usr_claims.role_id, int(Resources.IDENTITIES.value))
+        identity_perm = fetch_lightest_permission(perms, mode)
+
+        perms = self._perm_repo.list_by_id(usr_claims.role_id, int(Resources.USERS.value))
+        user_perm = fetch_lightest_permission(perms, mode)
 
         if user_perm.allow_read:
             ctx.arguments[ProfileArguments.USER_ID] = usr_claims.user_id

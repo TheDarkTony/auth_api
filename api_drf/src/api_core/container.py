@@ -3,17 +3,19 @@ from contextlib import contextmanager
 from dependency_injector import containers , providers
 import valkey
 
-from core.auth import signup
-from core.auth import signin
+from core.auth import signup_commands
+from core.auth import signin_commands
 from src.auth import wrappers as auth_wrappers
 
-from core.identity import identities
-from core.identity import profile
-from core.identity import users
-from src.identity import wrappers as identity_wrappers
+from core.identity import identities_commands
+from core.identity import profile_commands
+from core.identity import users_commands
+from core.permission import commands
+from core.pizza import orders
 
-from core.permission import permissions
+from src.identity import wrappers as identity_wrappers
 from src.permission import wrappers as perm_wrappers
+from src.pizza import wrappers as pizza_wrappers
 
 from repo_sqlalchemy import schema
 from repo_sqlalchemy.identity import repo as ir
@@ -23,8 +25,7 @@ from repo_sqlalchemy.temp_token import repo as tr
 from queue_publishers import emailer_2fa
 from queue_publishers.message_bus import MemoryMessageBus
 
-from core.pizza import orders
-from src.pizza import wrappers as pizza_wrappers
+from cache_valkey.permissions import repositories as perms_cache_repo
 
 from src.api_core.utils import UserTempBlackListValkey, AccessTokenBlackListValkey
 
@@ -53,6 +54,7 @@ class AppContainer(containers.DeclarativeContainer):
         , db_engine
     )
 
+    #DATABASE REPO
     identities_repo = providers.Factory(
         ir.IdentityRepository
         , db_seance_manager
@@ -63,7 +65,7 @@ class AppContainer(containers.DeclarativeContainer):
         , db_seance_manager
     )
 
-    permissions_repo = providers.Factory(
+    permissions_db_repo = providers.Factory(
         pr.RolePermissionRepository
         , db_seance_manager
     )
@@ -83,11 +85,11 @@ class AppContainer(containers.DeclarativeContainer):
         , db_seance_manager
     )
 
+    #CACHE REPO
     valkey_client = providers.ThreadSafeSingleton(
         valkey.from_url,
         url=config.valkey.url
     )
-
     user_temp_black_list_repo = providers.Factory(
         UserTempBlackListValkey,
         valkey_client
@@ -95,6 +97,24 @@ class AppContainer(containers.DeclarativeContainer):
     access_token_black_list_repo = providers.Factory(
         AccessTokenBlackListValkey,
         valkey_client
+    )
+
+    cache_settings = providers.Singleton(
+        perms_cache_repo.CacheSettings
+        ,ttl_seconds=config.repo.permissions.cache_seconds_ttl
+    )
+    permissions_cache_repo = providers.Factory(
+        perms_cache_repo.RolePermissionCacheRepository
+        , permissions_db_repo
+        , valkey_client
+        , cache_settings
+    )
+
+    #REPO
+    permissions_repo = providers.Selector(
+        config.repo.permissions.type,
+        database=permissions_db_repo,
+        cache=permissions_cache_repo
     )
 
     ####queue deps
@@ -109,11 +129,11 @@ class AppContainer(containers.DeclarativeContainer):
 
     #ListIdentities
     list_identities_pipeline = providers.Factory(
-        identities.pipeline_list_identities
+        identities_commands.pipeline_list_identities
         , permissions_repo
     )
     list_identities_handler = providers.Factory(
-        identities.ListIdentitiesHandler,
+        identities_commands.ListIdentitiesHandler,
         identities_repo
     )
     list_identities_wrappers = providers.Factory(
@@ -124,11 +144,11 @@ class AppContainer(containers.DeclarativeContainer):
 
     #FetchIdentity
     fetch_identity_pipeline = providers.Factory(
-        identities.pipeline_fetch_identity
+        identities_commands.pipeline_fetch_identity
         , permissions_repo
     )
     fetch_identity_handler = providers.Factory(
-        identities.FetchIdentityHandler
+        identities_commands.FetchIdentityHandler
         , identities_repo
     )
     fetch_identity_wrappers = providers.Factory(
@@ -139,11 +159,11 @@ class AppContainer(containers.DeclarativeContainer):
 
     #EditIdentityDemographics
     edit_demographics_pipeline = providers.Factory(
-        identities.pipeline_edit_demographics
+        identities_commands.pipeline_edit_demographics
         , permissions_repo
     )
     edit_demographics_handler = providers.Factory(
-        identities.EditDemographicsHandler
+        identities_commands.EditDemographicsHandler
         , identities_repo
     )
     edit_demographics_wrapper = providers.Factory(
@@ -154,11 +174,11 @@ class AppContainer(containers.DeclarativeContainer):
 
     #FetchProfile
     fetch_profile_pipeline = providers.Factory(
-        profile.pipeline_fetch_profile
+        profile_commands.pipeline_fetch_profile
         , permissions_repo
     )
     fetch_profile_handler = providers.Factory(
-        profile.FetchProfileHandler
+        profile_commands.FetchProfileHandler
         , users_repo
         , identities_repo
     )
@@ -170,11 +190,11 @@ class AppContainer(containers.DeclarativeContainer):
 
     #ListUsers
     list_users_pipeline = providers.Factory(
-        users.pipeline_list_user
+        users_commands.pipeline_list_user
         , permissions_repo
     )
     list_users_handler = providers.Factory(
-        users.ListUsersHandler
+        users_commands.ListUsersHandler
         , users_repo
     )
     list_users_wrapper = providers.Factory(
@@ -185,11 +205,11 @@ class AppContainer(containers.DeclarativeContainer):
 
     #FetchUserDetails
     fetch_user_pipeline = providers.Factory(
-        users.pipeline_fetch_user
+        users_commands.pipeline_fetch_user
         , permissions_repo
     )
     fetch_user_handler = providers.Factory(
-        users.FetchUserHandler
+        users_commands.FetchUserHandler
         , users_repo
     )
     fetch_user_wrapper = providers.Factory(
@@ -200,11 +220,11 @@ class AppContainer(containers.DeclarativeContainer):
 
     #DeleteUser
     delete_user_pipeline = providers.Factory(
-        users.pipeline_delete_user
+        users_commands.pipeline_delete_user
         , permissions_repo
     )
     delete_user_handler = providers.Factory(
-        users.DeleteUserHandler
+        users_commands.DeleteUserHandler
         , usr_repo=users_repo
         , user_temp_black_list_repo=user_temp_black_list_repo
         , access_token_seconds_ttl=config.auth.access_token_seconds_ttl
@@ -217,11 +237,11 @@ class AppContainer(containers.DeclarativeContainer):
 
     #EditUser
     edit_user_pipeline = providers.Factory(
-        users.pipeline_edit_user
+        users_commands.pipeline_edit_user
         , permissions_repo
     )
     edit_user_handler = providers.Factory(
-        users.EditUserHandler
+        users_commands.EditUserHandler
         , users_repo
     )
     edit_user_wrapper = providers.Factory(
@@ -232,11 +252,11 @@ class AppContainer(containers.DeclarativeContainer):
 
     #ChangeUserPwd
     change_user_pwd_pipeline = providers.Factory(
-        users.pipeline_change_pwd
+        users_commands.pipeline_change_pwd
         , permissions_repo
     )
     chage_user_pwd_handler = providers.Factory(
-        users.ChangePwdHandler
+        users_commands.ChangePwdHandler
         , users_repo
     )
     change_user_pwd = providers.Factory(
@@ -247,14 +267,14 @@ class AppContainer(containers.DeclarativeContainer):
 
     #SignUpWrapper
     auth_settings = providers.Singleton(
-        signup.Settings,
+        signup_commands.Settings,
         config.auth.default_role_id,
         config.auth.default_email_2fa_enabled,
         config.auth.email_code_seconds_ttl,
         config.auth.email_regex_template,
     )
     auth_util = providers.Factory(
-        signup.AuthTokenUtil
+        signup_commands.AuthTokenUtil
         , secret_jwt_key=config.auth.secret_jwt_key
         , jwt_algorithm=config.auth.jwt_algorithm
         , access_token_seconds_ttl=config.auth.access_token_seconds_ttl
@@ -262,11 +282,11 @@ class AppContainer(containers.DeclarativeContainer):
     )
 
     sign_up_pipeline = providers.Factory(
-        signup.pipeline_signup,
+        signup_commands.pipeline_signup,
         auth_settings
     )
     sign_up_handler = providers.Factory(
-        signup.SignUpHandler
+        signup_commands.SignUpHandler
         , identities_repo
         , users_repo
         , emailer_queue_client
@@ -280,10 +300,10 @@ class AppContainer(containers.DeclarativeContainer):
 
     #SignUp2FA
     signup_2fa_pipeline = providers.Factory(
-        signup.pipeline_signup_2fa
+        signup_commands.pipeline_signup_2fa
     )
     signup_2fa_handler = providers.Factory(
-        signup.SignUp2FAVerificationHandler
+        signup_commands.SignUp2FAVerificationHandler
         , temp_tokens_repo
         , identities_repo
         , users_repo
@@ -298,11 +318,11 @@ class AppContainer(containers.DeclarativeContainer):
 
     #SignInWrapper
     sign_in_pipeline = providers.Factory(
-        signin.pipeline_sign_in,
+        signin_commands.pipeline_sign_in,
         auth_settings
     )
     sign_in_handler = providers.Factory(
-        signin.SingInHandler
+        signin_commands.SingInHandler
         , users_repo
         , emailer_queue_client
         , auth_settings
@@ -316,10 +336,10 @@ class AppContainer(containers.DeclarativeContainer):
 
     #SignIn2FAWrapper
     signin_2fa_pipeline = providers.Factory(
-        signin.pipeline_sign_in_2fa_feedback
+        signin_commands.pipeline_sign_in_2fa_feedback
     )
     signin_2fa_handler = providers.Factory(
-        signin.SignIn2FAHandler
+        signin_commands.SignIn2FAHandler
         , users_repo
         , temp_tokens_repo
         , auth_util
@@ -334,12 +354,12 @@ class AppContainer(containers.DeclarativeContainer):
 
     #ListAppResourcesWrapper
     list_app_res_pipeline = providers.Factory(
-        permissions.list_app_resources_pipeline,
+        commands.list_app_resources_pipeline,
         permissions_repo
     )
 
     list_app_res_handler = providers.Factory(
-        permissions.ListAppResourcesHandler,
+        commands.ListAppResourcesHandler,
         app_resources_repo
     )
 
@@ -351,11 +371,11 @@ class AppContainer(containers.DeclarativeContainer):
 
     #ListRolesWrapper
     list_roles_pipeline = providers.Factory(
-        permissions.list_roles_pipeline,
+        commands.list_roles_pipeline,
         permissions_repo
     )
     list_roles_handler = providers.Factory(
-        permissions.ListRolesHandler,
+        commands.ListRolesHandler,
         roles_repo
     )
     list_roles_wrapper = providers.Factory(
@@ -366,11 +386,11 @@ class AppContainer(containers.DeclarativeContainer):
 
     #ListPermissionsWrapper
     list_permissions_pipeline = providers.Factory(
-        permissions.list_permissions_pipeline,
+        commands.list_permissions_pipeline,
         permissions_repo
     )
     list_permissions_handler = providers.Factory(
-        permissions.ListPermissionsHandler,
+        commands.ListPermissionsHandler,
         permissions_repo
     )
     list_permissions_wrapper = providers.Factory(
@@ -382,11 +402,11 @@ class AppContainer(containers.DeclarativeContainer):
 
     #EditPermissionWrapper
     edit_permission_pipeline = providers.Factory(
-        permissions.edit_permission_pipeline,
+        commands.edit_permission_pipeline,
         permissions_repo
     )
     edit_permission_handler = providers.Factory(
-        permissions.EditPermissionHandler,
+        commands.EditPermissionHandler,
         permissions_repo
     )
 
@@ -398,11 +418,11 @@ class AppContainer(containers.DeclarativeContainer):
 
     #CreatePermissionWrapper
     create_permission_pipeline = providers.Factory(
-        permissions.create_permission_pipeline,
+        commands.create_permission_pipeline,
         permissions_repo
     )
     create_permission_handler = providers.Factory(
-        permissions.CreatePermissionHandler,
+        commands.CreatePermissionHandler,
         permissions_repo
     )
     create_permission_wrapper = providers.Factory(
@@ -413,11 +433,11 @@ class AppContainer(containers.DeclarativeContainer):
 
     #DeletePermissionWrapper
     delete_permission_pipeline = providers.Factory(
-        permissions.delete_permission_pipeline,
+        commands.delete_permission_pipeline,
         permissions_repo
     )
     delete_permission_handler = providers.Factory(
-        permissions.DeletePermissionHandler,
+        commands.DeletePermissionHandler,
         permissions_repo
     )
     delete_permission_wrapper = providers.Factory(
@@ -428,11 +448,11 @@ class AppContainer(containers.DeclarativeContainer):
 
     #FetchPermissionWrapper
     fetch_permission_pipeline = providers.Factory(
-        permissions.fetch_permission_pipeline,
+        commands.fetch_permission_pipeline,
         permissions_repo
     )
     fetch_permission_handler = providers.Factory(
-        permissions.FetchPermissionHandler,
+        commands.FetchPermissionHandler,
         permissions_repo
     )
     fetch_permission_wrapper = providers.Factory(

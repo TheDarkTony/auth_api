@@ -11,6 +11,7 @@ from core_contracts.identity.models import Identity, IdentityFields
 
 from core.utils import most_left_right_cursors
 from core.identity.demands import EditDemographicsDemand
+from core.permission.utils import fetch_lightest_permission
 
 
 def verify_identity_argument_filter(ctx: DemandContext, next: Callable[[], Response]) -> Response:
@@ -44,7 +45,9 @@ class EditDemographicsAuthorizationFilter:
         identity_id = ctx.arguments.get(IdentityArguments.IDENTITY_ID, 0)
 
         mode = AccessMode.own if identity_id == usr_claims.identity_id else AccessMode.nonown
-        perm = self._perm_repo.fetch_lightest_by_name(usr_claims.role_id, Resources.IDENTITIES, mode)
+
+        perms = self._perm_repo.list_by_id(usr_claims.role_id, int(Resources.IDENTITIES.value))
+        perm = fetch_lightest_permission(perms, mode)
 
         if not perm.allow_edit:
             raise ForbiddenIssue('You do not have access to edit identity')
@@ -108,8 +111,8 @@ def verify_identity_lookup_args_filter(ctx: DemandContext, next: Callable[[], Re
 class ListIdentitiesAuthorizationFilter(ListAuthorizationFilter):
 
     @property
-    def resource(self) -> str:
-        return Resources.IDENTITIES
+    def resource(self) -> int:
+        return Resources.IDENTITIES.value
 
 
 def pipeline_list_identities(perm_repo: IRolePermissionRepository) -> Pipeline:
@@ -150,14 +153,15 @@ class FetchIdentityAuthorizationFilter:
 
 
     def authorize_operation(self, ctx: DemandContext, next: Callable[[], Response]) -> Response:
-
         usr_claims = ctx.current_usr_claims
         if usr_claims is None:
             raise ForbiddenIssue('Please authorize.')
 
         identity_id = ctx.arguments.get(IdentityArguments.IDENTITY_ID, 0)
         mode = AccessMode.own if identity_id == usr_claims.identity_id else AccessMode.nonown
-        permission = self._perm_repo.fetch_lightest_by_name(usr_claims.role_id, Resources.IDENTITIES, mode)
+
+        perms = self._perm_repo.list_by_id(usr_claims.role_id, int(Resources.IDENTITIES.value))
+        permission = fetch_lightest_permission(perms, mode)
 
         if not permission.allow_read:
             raise ForbiddenIssue('You do not have access to read identities')
