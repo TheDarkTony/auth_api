@@ -1,12 +1,20 @@
-[build-system]
-requires = ["setuptools>=82.0"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "core"
 version = "0.1.0"
-dependencies = [
-    'core_contracts == 0.1.0',
-    'pytest == 9.0.3',
-    'PyJWT == 2.13.0',
+description = ""
+authors = [
+    {name = "Tony",email = "ant_9393@bk.ru"}
 ]
+requires-python = ">=3.12"
+dependencies = [
+    "pytest (>=9.0.3,<10.0.0)",
+    "PyJWT (>=2.13.0,<3.0.0)",
+    "core-contracts (==0.1.0)"
+]
+
+[tool.poetry.dependencies]
+core-contracts = { path = "../core_contracts", develop = true}
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
