@@ -1,13 +1,21 @@
-[build-system]
-requires = ["setuptools>=82.0"]
-build-backend = "setuptools.build_meta"
-
 [project]
-name = "queue_workers"
+name = "queue-workers"
 version = "0.1.0"
-dependencies = [
-    'pika == 1.4.1',
-    'repo_sqlalchemy == 0.1.0',
-    'SQLAlchemy == 2.0.49',
-    'psycopg2 == 2.9.12'
+description = ""
+authors = [
+    {name = "Tony",email = "ant_9393@bk.ru"}
 ]
+requires-python = ">=3.12"
+dependencies = [
+    "pika (>=1.4.1,<2.0.0)",
+    "core-contracts (==0.1.0)",
+    "repo-sqlalchemy (==0.1.0)"
+]
+
+[tool.poetry.dependencies]
+core-contracts = { path = "../core_contracts", develop = true}
+repo-sqlalchemy = { path = "../repo_sqlalchemy", develop = true}
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
