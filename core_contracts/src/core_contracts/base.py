@@ -3,6 +3,7 @@ from typing import Sequence, Any
 from dataclasses import dataclass
 from enum import StrEnum, IntEnum
 from datetime import datetime, timezone
+import random
 
 
 class IRepository[TMobel](metaclass=ABCMeta):
@@ -24,6 +25,10 @@ class IRepository[TMobel](metaclass=ABCMeta):
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
+
+def generate_code(length: int) -> str:
+    code = str.join('', [str(random.randint(0, 9)) for _ in range(length)])
+    return code
 
 
 @dataclass

@@ -13,6 +13,8 @@ from core.identity import users_commands
 from core.permission import commands
 from core.pizza import orders
 
+import core.mock.temp_token_repo as mock_token_repo
+
 from src.identity import wrappers as identity_wrappers
 from src.permission import wrappers as perm_wrappers
 from src.pizza import wrappers as pizza_wrappers
@@ -22,11 +24,11 @@ from repo_sqlalchemy.identity import repo as ir
 from repo_sqlalchemy.permission import repo as pr
 from repo_sqlalchemy.temp_token import repo as tr
 
-from queue_publishers import emailer_2fa
+from queue_publishers import emailer_publisher
 from queue_publishers.message_bus import MemoryMessageBus
 
 from cache_valkey.permissions import repositories as perms_cache_repo
-from cache_valkey.identities import auth_black_list_repo as black_list_repo
+from cache_valkey.identities import auth_black_list_repo as cache_repo
 
 #from src.api_core.utils import UserTempBlackListValkey, AccessTokenBlackListValkey
 
@@ -81,7 +83,7 @@ class AppContainer(containers.DeclarativeContainer):
         , db_seance_manager
     )
 
-    temp_tokens_repo = providers.Factory(
+    db_temp_tokens_repo = providers.Factory(
         tr.TempTokenRepository
         , db_seance_manager
     )
@@ -92,11 +94,11 @@ class AppContainer(containers.DeclarativeContainer):
         url=config.valkey.url
     )
     cache_user_temp_black_list_repo = providers.Factory(
-        black_list_repo.UserTempBlackListRepo,
+        cache_repo.UserTempBlackListRepo,
         valkey_client
     )
     cache_access_token_black_list_repo = providers.Factory(
-        black_list_repo.AccessTokenBlackListRepo,
+        cache_repo.AccessTokenBlackListRepo,
         valkey_client
     )
 
@@ -113,14 +115,23 @@ class AppContainer(containers.DeclarativeContainer):
 
     #MOCK REPOS
     mock_access_token_black_list_repo = providers.Factory(
-        black_list_repo.MockAccessTokenBlackListRepo
+        cache_repo.MockAccessTokenBlackListRepo
     )
 
     mock_user_temp_black_list_repo = providers.Factory(
-        black_list_repo.MockUserTempBlackListRepo
+        cache_repo.MockUserTempBlackListRepo
+    )
+
+    mock_temp_tokens_repo = providers.Factory(
+        mock_token_repo.MockTempTokenRepo
     )
 
     #REPO
+    temp_tokens_repo = providers.Selector(
+        config.repo.temp_token.type,
+        database=db_temp_tokens_repo,
+        mock=mock_temp_tokens_repo
+    )
     permissions_repo = providers.Selector(
         config.repo.permissions.type,
         database=db_permissions_repo,
@@ -137,15 +148,29 @@ class AppContainer(containers.DeclarativeContainer):
         cache=cache_access_token_black_list_repo
     )
 
-    ####queue deps
+    ####QUEUE DEPS
     message_bus=providers.ThreadSafeSingleton(
         MemoryMessageBus
     )
-    emailer_queue_client = providers.Factory(
-        emailer_2fa.BusedEmail2FAPublisher
+    queue_emailer_client = providers.Factory(
+        emailer_publisher.BusedEmail2FAPublisher
         , bus=message_bus
         , exchange_name=config.rabbitmq.exchanges.auth_2fa_emailer
     )
+
+    ##MOCK QUEUE DEPS
+    mock_emailer_client = providers.Factory(
+        emailer_publisher.MockEmail2FAPublisher,
+        temp_token_repo=mock_temp_tokens_repo
+    )
+
+    #PUBLISHERS
+    emailer_queue_client = providers.Selector(
+        config.publisher.emailer_2fa.type,
+        mock=mock_emailer_client,
+        queue=queue_emailer_client
+    )
+
 
     #ListIdentities
     list_identities_pipeline = providers.Factory(

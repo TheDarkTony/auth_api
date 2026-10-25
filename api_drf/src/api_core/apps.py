@@ -43,8 +43,10 @@ class ApiCoreConfig(AppConfig):
 
         security = settings.SECURITY_AUTH
         queue = settings.RABBITMQ
-        repo = settings.REPO
-        if not (security or queue or repo):
+        repo = settings.REPO if settings.REPO is not None else {}
+        publisher = settings.PUBLISHER if settings.PUBLISHER is not None else {}
+        
+        if not (security or queue):
             raise Exception('Missed configuration section')
         
         secret_jwt_key = security.get('SECRET_JWT_KEY')
@@ -93,8 +95,11 @@ class ApiCoreConfig(AppConfig):
         perm_repo_datatype = repo.get('PERMISSIONS', {}).get('TYPE', 'database')
         perm_repo_cache_ttl = repo.get('PERMISSIONS',{}).get('CACHE_SECONDS_TTL', 300)
 
-        access_token_temp_black_list = repo.get('ACCESS_TOKEN_TEMP_BLACK_LIST', {}).get('TYPE', 'mock')
-        usr_temp_black_list = repo.get('USER_TEMP_BLACK_LIST', {}).get('TYPE', 'mock')
+        access_token_bl_repo_type = repo.get('ACCESS_TOKEN_TEMP_BLACK_LIST', {}).get('TYPE', 'mock')
+        usr_bl_repo_type = repo.get('USER_TEMP_BLACK_LIST', {}).get('TYPE', 'mock')
+        temp_token_repo_type = repo.get('TEMP_TOKEN', {}).get('TYPE', 'mock')
+
+        emailer_publisher_type = publisher.get('EMAILER_2FA', {}).get('TYPE', 'mock')
         
         container.config.from_dict({
             'db': {
@@ -125,11 +130,14 @@ class ApiCoreConfig(AppConfig):
                 'refresh_token_seconds_ttl': refresh_token_seconds_ttl,
             },
             'repo': {
+                'temp_token': { 'type': temp_token_repo_type },
                 'permissions': { 'type': perm_repo_datatype, 'cache_seconds_ttl': perm_repo_cache_ttl },
-                'access_token_temp_black_list' : { 'type': access_token_temp_black_list },
-                'user_temp_black_list': { 'type': usr_temp_black_list }
+                'access_token_temp_black_list' : { 'type': access_token_bl_repo_type },
+                'user_temp_black_list': { 'type': usr_bl_repo_type }
+            },
+            'publisher': {
+                'emailer_2fa': { 'type': emailer_publisher_type }
             }
-
         })
 
         container.override_providers(message_bus=MESSAGE_BUS)
