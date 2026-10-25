@@ -295,4 +295,4 @@ def _run_queue_manager(amqp_url, message_bus, thread_stopper: ThreadStopper):
 
 
 def get_queue_manager_bg_task(amqp_url, message_bus, stopper: ThreadStopper) -> threading.Thread:
-    return threading.Thread(target=_run_queue_manager, args=(amqp_url, message_bus, stopper))
+    return threading.Thread(target=_run_queue_manager, args=(amqp_url, message_bus, stopper), daemon=True)
