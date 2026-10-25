@@ -92,6 +92,9 @@ class ApiCoreConfig(AppConfig):
         
         perm_repo_datatype = repo.get('PERMISSIONS', {}).get('TYPE', 'database')
         perm_repo_cache_ttl = repo.get('PERMISSIONS',{}).get('CACHE_SECONDS_TTL', 300)
+
+        access_token_temp_black_list = repo.get('ACCESS_TOKEN_TEMP_BLACK_LIST', {}).get('TYPE', 'mock')
+        usr_temp_black_list = repo.get('USER_TEMP_BLACK_LIST', {}).get('TYPE', 'mock')
         
         container.config.from_dict({
             'db': {
@@ -122,7 +125,9 @@ class ApiCoreConfig(AppConfig):
                 'refresh_token_seconds_ttl': refresh_token_seconds_ttl,
             },
             'repo': {
-                'permissions': { 'type': perm_repo_datatype, 'cache_seconds_ttl': perm_repo_cache_ttl }
+                'permissions': { 'type': perm_repo_datatype, 'cache_seconds_ttl': perm_repo_cache_ttl },
+                'access_token_temp_black_list' : { 'type': access_token_temp_black_list },
+                'user_temp_black_list': { 'type': usr_temp_black_list }
             }
 
         })

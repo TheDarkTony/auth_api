@@ -59,7 +59,9 @@ SECURITY_AUTH_2FA = {
 
 # TYPE: database, cache
 REPO = {
-    'PERMISSIONS': {'TYPE': 'database', 'CACHE_SECONDS_TTL': 600}
+    'PERMISSIONS': { 'TYPE': 'cache', 'CACHE_SECONDS_TTL': 600 }, # TYPE: database, cache
+    'ACCESS_TOKEN_TEMP_BLACK_LIST': { 'TYPE': 'mock' }, # TYPE: cache, mock
+    'USER_TEMP_BLACK_LIST': { 'TYPE': 'mock' } # TYPE: cache, mock
 }
 
 SIGNUP_DEFAULT_ROLE_ID = 4
