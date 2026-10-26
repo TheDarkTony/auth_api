@@ -93,7 +93,7 @@ class IdentityRepository(BaseRepo[entities.Identity, models.Identity], IIdentity
         )
 
         seance = self._seance()
-        entries: Sequence[Row[tuple[int, str|None, str|None]]]
+        entries: Sequence[Row[int, str|None, str|None]]
         with seance.begin():
             entries = seance.execute(stmt).all()
 

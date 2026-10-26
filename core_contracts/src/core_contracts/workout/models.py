@@ -1,4 +1,4 @@
-from enum import IntEnum
+from enum import IntEnum, StrEnum
 from datetime import datetime
 from typing import Annotated, Any
 
@@ -21,6 +21,10 @@ class MuscleGroup(MuscleGroupSubject):
     id: int
 
 
+class MuscleGroupFields(StrEnum):
+    NAME = 'name'
+
+
 class ExerciseSubject(BaseModel):
     name: Annotated[str, StringConstraints(max_length=FieldLength.l_100)]
     description: Annotated[str, StringConstraints(max_length=FieldLength.l_100)]
@@ -29,6 +33,12 @@ class ExerciseSubject(BaseModel):
 
 class Exercise(ExerciseSubject):
     id: int
+
+
+class ExerciseFields(StrEnum):
+    NAME = 'name'
+    DESCRIPTION = 'description'
+    MUSCLE_GROUP_ID = 'muscle_group_id'
 
 
 class WorkoutSubject(BaseModel):
