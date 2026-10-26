@@ -20,6 +20,11 @@ class TBL(Enum):
     TEMP_TOKEN = 'temp_tokens'
     EVENTS_LOG = 'events_log'
 
+    MUSCLE_GROUP = 'muscle_groups'
+    EXERCISE = 'exercises'
+    WORKOUT = 'workouts'
+    WORKOUT_EXERCISES= 'workout_exercises'
+
 
 IntPK = Annotated[int, mapped_column(Integer, primary_key=True, autoincrement=True)]
 BoolFlag = Annotated[bool, mapped_column(Boolean)]
@@ -38,9 +43,9 @@ class IntIdentifiableEntity(Protocol):
 
 class ZeroPKFilteredSession(Session):
 
-    def add(self, instance: object, _warn: bool = True) -> None:
+    def add(self, instance: object, *, _warn: bool = True) -> None:
         self._strip_zero_pk(instance)
-        return super().add(instance, _warn)
+        return super().add(instance, _warn=_warn)
 
 
     def add_all(self, instances: Iterable[object]) -> None:

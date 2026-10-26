@@ -2,7 +2,8 @@ from repo_sqlalchemy.schema import Base
 from repo_sqlalchemy.identity import entities as identity_entity
 from repo_sqlalchemy.permission import entities as permission_entity
 from repo_sqlalchemy.temp_token import repo as temp_token_entity
-from repo_sqlalchemy.logging import entities
+from repo_sqlalchemy.logging import entities as logging_entities
+from repo_sqlalchemy.workout import entities as workout_entities
 
 
 
